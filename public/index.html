@@ -102,6 +102,15 @@ input:focus-visible + .box{outline:2px solid var(--accent);outline-offset:2px}
 .tt{background:linear-gradient(currentColor,currentColor) no-repeat 0 60%/0 1px;-webkit-box-decoration-break:clone;box-decoration-break:clone;transition:background-size var(--t) var(--ease),color var(--t) var(--ease)}
 input:checked ~ .ttext .tt{background-size:100% 1px;color:var(--muted)}
 .kind{font:400 11.5px/1.4 var(--font-mono);color:var(--faint)}
+.tmore{display:grid;gap:8px;padding:0 10px 10px 42px;margin-top:-4px}
+.tdetail{font-size:13px;line-height:1.5;color:var(--muted);max-width:62ch}
+.tlinks{display:flex;flex-wrap:wrap;gap:6px}
+.tlink{display:inline-flex;align-items:center;gap:6px;font:600 12.5px/1 var(--font-body);padding:7px 11px;border-radius:99px;background:var(--accent-soft);color:var(--accent-strong);border:1px solid transparent;transition:border-color var(--t-fast) var(--ease),transform var(--t-fast) var(--ease)}
+.tlink:hover{text-decoration:none;border-color:color-mix(in srgb,var(--accent) 45%,transparent)}
+.tlink:active{transform:scale(.97)}
+.tlink svg{width:12px;height:12px}
+li:has(input:checked) .tmore{opacity:.55}
+.tasks.lg .tmore{padding-left:50px}
 .tasks.lg .task{padding:12px 12px;font-size:15.5px;gap:14px}
 .tasks.lg .task input{left:12px;top:12px;width:24px;height:24px}
 .tasks.lg .box{width:24px;height:24px;border-radius:8px}
@@ -583,8 +592,16 @@ const jobCount = j => { const c = {ok:0, partial:0, gap:0}; j.reqs.forEach(r=>c[
 const pStatus = (p, pr) => p.status || (pr.p === 100 ? "Listo" : pr.n > 0 ? "En curso" : "Por empezar");
 
 /* ---------- Plantillas ---------- */
+// Detalle y enlaces de una tarea (data/<ruta>.js → details). Van fuera del <label> para no marcar la casilla al hacer clic.
+function taskMore(id){
+  const t = TASK[id], det = t && (TRACKS.find(x=>x.id===t.track)||{}).details;
+  const m = det && det[id];
+  if(!m) return "";
+  const links = (m.l||[]).map(([txt,url])=>`<a class="tlink" href="${url}" target="_blank" rel="noopener">${txt}${icon("ext")}</a>`).join("");
+  return `<div class="tmore">${m.d?`<p class="tdetail">${m.d}</p>`:""}${links?`<div class="tlinks">${links}</div>`:""}</div>`;
+}
 function taskItem([id,txt,kind], prefix){
-  return `<li><label class="task" for="${prefix}-${id}"><input type="checkbox" id="${prefix}-${id}" data-id="${id}"${done[id]?" checked":""}${ready?"":" disabled"}>${BOX}<span class="ttext"><span class="tt">${txt}</span>${kind?`<span class="kind">${kind}</span>`:""}</span></label></li>`;
+  return `<li><label class="task" for="${prefix}-${id}"><input type="checkbox" id="${prefix}-${id}" data-id="${id}"${done[id]?" checked":""}${ready?"":" disabled"}>${BOX}<span class="ttext"><span class="tt">${txt}</span>${kind?`<span class="kind">${kind}</span>`:""}</span></label>${taskMore(id)}</li>`;
 }
 const taskById = (id, prefix) => taskItem(TASK[id] ? [id, TASK[id].txt] : [id, id], prefix);
 const ring = (cls="") => `<div class="ring-wrap ${cls}">
