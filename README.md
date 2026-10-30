@@ -15,6 +15,24 @@
 | [05-proyectos](05-proyectos/README.md) | Proyectos de portafolio (especificaciones y código) |
 | [06-vacante](06-vacante/nexaminds.md) | La vacante, el análisis de gaps y el contexto de Raúl |
 
+## Tablero web
+
+`public/index.html` + `server/` (Node + Express + Postgres). Contrato de la API: [CONTRACT.md](CONTRACT.md).
+
+**Local:** `npm install` y luego `npm start` → http://localhost:3000. Sin `DATABASE_URL` guarda en memoria.
+
+**Easypanel** (proyecto `discord`):
+1. Servicio *App* `ai-engineer` → fuente GitHub `leonardos4enz/AI-Engineer`, rama `main`, build **Dockerfile**.
+2. Environment:
+   ```
+   DATABASE_URL=<Internal Connection URL de amigatos-db, cambiando el nombre de la base al final por ai_engineer>
+   ADMIN_PASSWORD=<tu contraseña>
+   JWT_SECRET=<cadena larga aleatoria>
+   API_TOKEN=<opcional, para actualizar por API>
+   ```
+   La base `ai_engineer` se crea sola al arrancar y solo usa tablas `lcae_*`. No toca las de Amigatos.
+3. Domains → puerto **80**. Deploy y comprueba `/health` → `ok`.
+
 ## Hoy: primeros pasos
 
 1. Inscríbete en los 5 cursos gratuitos (bundle): https://academy.langchain.com/bundles/lcae-prerequisite-courses

@@ -1,6 +1,11 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>Ruta LCAE</title>
-<meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Familjen+Grotesk:wght@500;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
 <style>
 /* Layout: one column; header with countdown + overall bar, then the six weeks as a timeline of checklists, then exam scores and links. */
@@ -25,7 +30,7 @@
   --ok:#5ccb8f; --warn:#e8b04f; color-scheme:dark}
 
 *{box-sizing:border-box}
-body{background:var(--bg);color:var(--fg);font-family:var(--body);font-size:15px;line-height:1.5}
+body{margin:0;background:var(--bg);color:var(--fg);font-family:var(--body);font-size:15px;line-height:1.5}
 .wrap{max-width:860px;margin:0 auto;padding-block:28px 64px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));display:grid;gap:28px}
 h1,h2,h3{font-family:var(--display);margin:0;text-wrap:balance;letter-spacing:-.01em}
 h1{font-size:clamp(28px,5vw,38px);line-height:1.1}
@@ -75,7 +80,9 @@ button{font:inherit;font-weight:600;font-size:14px;padding:8px 14px;border-radiu
 button:focus-visible{outline:2px solid var(--fg);outline-offset:2px}
 button:disabled{opacity:.5;cursor:default}
 .attempts{display:grid;gap:10px}
-.attempt{display:grid;grid-template-columns:90px repeat(4,minmax(0,1fr)) 64px;gap:8px;align-items:center;font-size:13px}
+.attempt{display:grid;grid-template-columns:90px repeat(4,minmax(0,1fr)) 64px 28px;gap:8px;align-items:center;font-size:13px}
+.del{width:28px;height:28px;padding:0;border-radius:6px;background:transparent;color:var(--muted);font-size:18px;line-height:1;font-weight:500}
+.del:hover{background:var(--accent-soft);color:var(--fg)}
 .attempt .cell{display:grid;gap:3px}
 .mini{height:6px;border-radius:99px;background:var(--line);position:relative;overflow:visible}
 .mini i{display:block;height:100%;border-radius:99px}
@@ -84,7 +91,19 @@ button:disabled{opacity:.5;cursor:default}
 .total.pass{color:var(--ok)} .total.fail{color:var(--warn)}
 .hint{color:var(--muted);font-size:13px;margin:0}
 .attempt.head{color:var(--muted);font-family:var(--mono);font-size:11px;text-transform:uppercase;letter-spacing:.06em}
-@media (max-width:560px){.attempt{grid-template-columns:70px repeat(4,minmax(0,1fr)) 48px;gap:6px}}
+@media (max-width:560px){.attempt{grid-template-columns:62px repeat(4,minmax(0,1fr)) 44px 28px;gap:6px}}
+
+/* Session */
+.topline{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:8px 16px}
+.auth{display:flex;flex-wrap:wrap;align-items:center;gap:8px;font-size:13px;color:var(--muted)}
+.auth form{display:flex;flex-wrap:wrap;align-items:center;gap:8px}
+.auth input{font:inherit;font-size:14px;padding:6px 8px;border:1px solid var(--line);border-radius:6px;background:var(--surface);color:var(--fg);width:180px;max-width:100%}
+.auth input:focus-visible,.score-form input:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
+.auth button{padding:6px 12px;font-size:13px}
+.linkbtn{background:none;color:var(--accent);padding:0;font-weight:500;font-size:13px;text-decoration:underline;text-underline-offset:2px}
+.linkbtn:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap;border:0}
+[hidden]{display:none !important}
 
 .courses{list-style:none;margin:0;padding:0;display:grid;gap:8px;counter-reset:c}
 .course{display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:4px 12px;align-items:center;padding:10px 12px;border:1px solid var(--line);border-radius:10px;border-left:4px solid var(--c)}
@@ -101,10 +120,23 @@ h3.sub{font-size:15px;color:var(--muted);font-weight:500}
 .status{font-size:13px;color:var(--muted)}
 @media (prefers-reduced-motion:reduce){.bar i{transition:none}}
 </style>
-
+</head>
+<body>
 <div class="wrap">
   <header>
-    <div class="eyebrow">LangChain Certified Agent Engineer · Nexaminds</div>
+    <div class="topline">
+      <div class="eyebrow">LangChain Certified Agent Engineer · Nexaminds</div>
+      <div class="auth" id="auth">
+        <span id="auth-ro" hidden>Solo lectura</span>
+        <button type="button" class="linkbtn" id="login-open" hidden aria-expanded="false" aria-controls="login-form">Iniciar sesión</button>
+        <form id="login-form" hidden>
+          <label for="login-pass" class="sr-only">Contraseña</label>
+          <input id="login-pass" type="password" autocomplete="current-password" placeholder="Contraseña" required>
+          <button type="submit" id="login-btn">Entrar</button>
+        </form>
+        <button type="button" class="linkbtn" id="logout-btn" hidden>Cerrar sesión</button>
+      </div>
+    </div>
     <h1>Ruta LCAE</h1>
     <div class="stats">
       <div class="stat"><b class="num" id="pct">0%</b><span>completado</span></div>
@@ -113,7 +145,7 @@ h3.sub{font-size:15px;color:var(--muted);font-weight:500}
     </div>
     <div class="bar" aria-hidden="true"><i id="overall"></i></div>
     <div class="domains" id="domains"></div>
-    <div class="status" id="status">Cargando progreso…</div>
+    <div class="status" id="status" role="status" aria-live="polite">Cargando progreso…</div>
   </header>
 
   <section class="card" aria-labelledby="cr-h">
@@ -214,14 +246,22 @@ const LABEL = {setup:"Preparación",build:"Build",test:"Test",deploy:"Deploy",mo
 const MONTHS = ["ene","feb","mar","abr","may","jun","jul","ago","sep","oct","nov","dic"];
 const fmt = s => { const d = new Date(s+"T12:00:00"); return d.getDate()+" "+MONTHS[d.getMonth()]; };
 
-let done = {};      // taskId -> true
+let done = {};      // taskId -> iso string (truthy = hecho)
 let attempts = [];  // [{id, at, build, test, deploy, monitor}]
-let db = null, canWrite = true;
+let canWrite = false, loggedIn = false, loginEnabled = true;
+let pending = 0;    // escrituras en curso; el refresco no pisa cambios optimistas
 
 const $ = id => document.getElementById(id);
 const today = new Date();
 
 function render(){
+  const focusId = document.activeElement && document.activeElement.id;
+  draw();
+  if(focusId && document.activeElement !== $(focusId)) $(focusId)?.focus();
+  setDisabled();
+}
+
+function draw(){
   const all = WEEKS.flatMap(w=>w.tasks.map(t=>t[0]));
   const n = all.filter(id=>done[id]).length;
   const pct = Math.round(n/all.length*100);
@@ -258,52 +298,205 @@ function render(){
 
   const box = $("attempts");
   if(!attempts.length){ box.innerHTML = '<p class="hint">Aún no hay intentos. Haz el diagnóstico y registra tu puntaje aquí.</p>'; return; }
-  box.innerHTML = `<div class="attempt head"><span>Fecha</span>${DOMAINS.map(d=>`<span>${d[1]}</span>`).join("")}<span style="text-align:right">Total</span></div>` +
+  box.innerHTML = `<div class="attempt head"><span>Fecha</span>${DOMAINS.map(d=>`<span>${d[1]}</span>`).join("")}<span style="text-align:right">Total</span><span></span></div>` +
     attempts.map(a=>{
       const tot = a.build+a.test+a.deploy+a.monitor;
-      return `<div class="attempt"><span class="num">${fmt(a.at)}</span>${DOMAINS.map(([k])=>`<div class="cell"><span class="num">${a[k]}/10</span><div class="mini"><i style="width:${a[k]*10}%;background:var(--${k})"></i></div></div>`).join("")}<span class="total num ${tot>=28?"pass":"fail"}">${tot}/40</span></div>`;
+      const tmp = String(a.id).startsWith("tmp-");
+      const del = canWrite && !tmp
+        ? `<button type="button" class="del" id="del-${a.id}" data-del="${a.id}" aria-label="Borrar intento del ${fmt(a.at)}" title="Borrar">×</button>`
+        : `<span></span>`;
+      return `<div class="attempt"><span class="num">${fmt(a.at)}</span>${DOMAINS.map(([k])=>`<div class="cell"><span class="num">${a[k]}/10</span><div class="mini"><i style="width:${a[k]*10}%;background:var(--${k})"></i></div></div>`).join("")}<span class="total num ${tot>=28?"pass":"fail"}">${tot}/40</span>${del}</div>`;
     }).join("");
 }
 
+/* ---------- API ---------- */
+class HttpError extends Error{ constructor(status, msg){ super(msg); this.status = status; } }
+
+async function api(method, url, body){
+  const opts = {method, credentials:"same-origin", headers:{"X-Requested-With":"fetch"}};
+  if(body !== undefined){ opts.headers["Content-Type"] = "application/json"; opts.body = JSON.stringify(body); }
+  let res;
+  try{ res = await fetch(url, opts); }
+  catch(e){ throw new HttpError(0, "Sin conexión"); }
+  let data = null;
+  try{ data = await res.json(); }catch(e){}
+  if(!res.ok) throw new HttpError(res.status, (data && data.error) || "Error "+res.status);
+  return data;
+}
+
+const setStatus = t => { $("status").textContent = t; };
+
+function setDisabled(){
+  canWrite = loggedIn;
+  document.querySelectorAll("input[data-id]").forEach(i=>{ i.disabled = !canWrite; });
+  document.querySelectorAll("#score-form input, #s-save").forEach(i=>{ i.disabled = !canWrite; });
+}
+
+function renderAuth(){
+  const ro = !loginEnabled;
+  $("auth-ro").hidden = !ro;
+  $("logout-btn").hidden = ro || !loggedIn;
+  $("login-open").hidden = ro || loggedIn || !$("login-form").hidden;
+  if(ro || loggedIn){ $("login-form").hidden = true; $("login-open").setAttribute("aria-expanded","false"); }
+}
+
+function setSession(isIn){
+  loggedIn = !!isIn;
+  canWrite = loggedIn;
+  renderAuth();
+  render();
+}
+
+function onWriteError(err, fallback){
+  if(err.status === 401){ setSession(false); setStatus("Tu sesión expiró. Inicia sesión de nuevo."); }
+  else setStatus(fallback);
+}
+
+/* ---------- Carga y refresco ---------- */
+let lastData = "";
+async function loadProgress(){
+  const data = await api("GET", "/api/progress");
+  if(pending > 0) return;           // no pisar cambios optimistas en curso
+  const json = JSON.stringify(data);
+  if(json === lastData) return;
+  lastData = json;
+  done = data.done || {};
+  attempts = (data.scores || []).map(s=>({id:s.id, at:String(s.at).slice(0,10),
+    build:+s.build, test:+s.test, deploy:+s.deploy, monitor:+s.monitor}));
+  render();
+}
+
+async function loadMe(){
+  const me = await api("GET", "/api/me");
+  const en = !!me.loginEnabled, inn = !!me.loggedIn;
+  if(en === loginEnabled && inn === loggedIn && loadMe.ran) return;
+  loadMe.ran = true;
+  loginEnabled = en;
+  setSession(inn);
+}
+
+async function refresh(first){
+  const [p, m] = await Promise.allSettled([loadProgress(), loadMe()]);
+  if(p.status === "rejected") setStatus("No se pudo cargar el progreso.");
+  else if(first) setStatus("");
+}
+
+/* ---------- Escrituras ---------- */
 document.querySelector(".wrap").addEventListener("change", async e=>{
   const id = e.target.dataset && e.target.dataset.id;
-  if(!id || !db) return;
+  if(!id || !canWrite) return;
   const val = e.target.checked;
-  if(val) done[id]=true; else delete done[id];
+  const prev = done[id];
+  if(val) done[id] = new Date().toISOString(); else delete done[id];
   render();
-  try{
-    if(val) await db.doc("done/"+id).set({done:true, at:new Date().toISOString()});
-    else await db.doc("done/"+id).delete();
-  }catch(err){ $("status").textContent = "No se pudo guardar. Recarga la página e intenta de nuevo."; }
+  pending++;
+  try{ await api("PUT", "/api/done/"+encodeURIComponent(id), {done:val}); lastData = ""; }
+  catch(err){
+    if(prev) done[id] = prev; else delete done[id];
+    render();
+    onWriteError(err, "No se pudo guardar. Intenta de nuevo.");
+  }
+  finally{ pending--; }
 });
 
 $("score-form").addEventListener("submit", async e=>{
   e.preventDefault();
-  if(!db) return;
+  if(!canWrite) return;
   const v = k => Math.max(0, Math.min(10, parseInt($("s-"+k).value,10)||0));
-  const doc = {at:new Date().toISOString().slice(0,10), build:v("build"), test:v("test"), deploy:v("deploy"), monitor:v("monitor")};
+  const body = {build:v("build"), test:v("test"), deploy:v("deploy"), monitor:v("monitor")};
+  const d = new Date();
+  const localDay = d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0");
+  const tmp = {id:"tmp-"+Date.now(), at:localDay, ...body};
+  attempts = [...attempts, tmp];
+  render();
   $("s-save").disabled = true;
-  try{ await db.collection("scores").add(doc); e.target.reset(); $("status").textContent = "Intento guardado."; }
-  catch(err){ $("status").textContent = "No se pudo guardar el intento."; }
-  $("s-save").disabled = false;
+  pending++;
+  try{
+    const row = await api("POST", "/api/scores", body);
+    attempts = attempts.map(a=>a===tmp ? {id:row.id, at:String(row.at).slice(0,10),
+      build:+row.build, test:+row.test, deploy:+row.deploy, monitor:+row.monitor} : a);
+    lastData = "";
+    e.target.reset();
+    setStatus("Intento guardado.");
+  }catch(err){
+    attempts = attempts.filter(a=>a!==tmp);
+    onWriteError(err, err.status === 400 ? "Puntajes inválidos (0 a 10)." : "No se pudo guardar el intento.");
+  }finally{
+    pending--;
+    render();
+  }
+});
+
+$("attempts").addEventListener("click", async e=>{
+  const btn = e.target.closest("[data-del]");
+  if(!btn || !canWrite) return;
+  const id = btn.dataset.del;
+  const idx = attempts.findIndex(a=>String(a.id) === id);
+  if(idx < 0) return;
+  const removed = attempts[idx];
+  attempts = attempts.filter(a=>a!==removed);
+  render();
+  pending++;
+  try{ await api("DELETE", "/api/scores/"+encodeURIComponent(id)); lastData = ""; setStatus("Intento borrado."); }
+  catch(err){
+    attempts = [...attempts];
+    attempts.splice(Math.min(idx, attempts.length), 0, removed);
+    render();
+    onWriteError(err, "No se pudo borrar el intento.");
+  }
+  finally{ pending--; }
+});
+
+/* ---------- Sesión ---------- */
+$("login-open").addEventListener("click", ()=>{
+  $("login-form").hidden = false;
+  $("login-open").hidden = true;
+  $("login-open").setAttribute("aria-expanded","true");
+  $("login-pass").focus();
+});
+
+$("login-form").addEventListener("keydown", e=>{
+  if(e.key === "Escape"){
+    $("login-form").hidden = true;
+    $("login-open").hidden = false;
+    $("login-open").setAttribute("aria-expanded","false");
+    $("login-open").focus();
+  }
+});
+
+$("login-form").addEventListener("submit", async e=>{
+  e.preventDefault();
+  const pass = $("login-pass").value;
+  if(!pass) return;
+  $("login-btn").disabled = true;
+  try{
+    await api("POST", "/api/login", {password:pass});
+    $("login-pass").value = "";
+    $("login-form").hidden = true;
+    setSession(true);
+    setStatus("Sesión iniciada.");
+    lastData = "";
+    loadProgress().catch(()=>{});
+  }catch(err){
+    if(err.status === 401){ setStatus("Contraseña incorrecta."); $("login-pass").select(); }
+    else if(err.status === 429) setStatus("Demasiados intentos, espera unos minutos.");
+    else if(err.status === 503){ loginEnabled = false; renderAuth(); setStatus("Solo lectura."); }
+    else setStatus("No se pudo iniciar sesión.");
+  }finally{
+    $("login-btn").disabled = false;
+  }
+});
+
+$("logout-btn").addEventListener("click", async ()=>{
+  try{ await api("POST", "/api/logout"); setSession(false); setStatus("Sesión cerrada."); $("login-open").focus(); }
+  catch(err){ setStatus("No se pudo cerrar sesión."); }
 });
 
 render();
-
-(async()=>{
-  db = await window.claude?.use?.("db") ?? null;
-  if(!db){ canWrite=false; $("status").textContent = "Vista de solo lectura: el progreso no se puede cargar aquí."; $("s-save").disabled=true; render(); return; }
-  try{
-    const user = await window.claude.use("user");
-    const cw = user ? await user.can("data.write") : null;
-    if(cw===false){ canWrite=false; $("s-save").disabled=true; }
-  }catch(e){}
-  $("status").textContent = "";
-  db.collection("done").onSnapshot(s=>{
-    done = {}; s.docs.forEach(d=>{ if(d.data()?.done) done[d.id]=true; }); render();
-  }, ()=>{ $("status").textContent = "Se perdió la conexión con el progreso. Recarga la página."; });
-  db.collection("scores").orderBy("at").onSnapshot(s=>{
-    attempts = s.docs.map(d=>({id:d.id, ...d.data()})); render();
-  }, ()=>{});
-})();
+renderAuth();
+refresh(true);
+setInterval(()=>{ if(document.visibilityState === "visible") refresh(false); }, 60000);
+document.addEventListener("visibilitychange", ()=>{ if(document.visibilityState === "visible") refresh(false); });
 </script>
+</body>
+</html>
