@@ -1,0 +1,309 @@
+<title>Ruta LCAE</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Familjen+Grotesk:wght@500;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: one column; header with countdown + overall bar, then the six weeks as a timeline of checklists, then exam scores and links. */
+:root{
+  --bg:#f3f5f8; --surface:#ffffff; --fg:#17202b; --muted:#5d6b7c; --line:#dde3ea;
+  --accent:#1f5f8b; --accent-soft:#e1edf6;
+  --build:#5b4fc7; --test:#b7791f; --deploy:#0f8a7e; --monitor:#c2416b; --setup:#5d6b7c;
+  --ok:#2f855a; --warn:#b7791f;
+  --display:"Familjen Grotesk",system-ui,sans-serif;
+  --body:"IBM Plex Sans",system-ui,sans-serif;
+  --mono:"IBM Plex Mono",ui-monospace,monospace;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#0f141a; --surface:#171e27; --fg:#e6ebf1; --muted:#93a1b2; --line:#283340;
+  --accent:#6fb1e0; --accent-soft:#1b2c3b;
+  --build:#9d93ff; --test:#e8b04f; --deploy:#3ec5b6; --monitor:#f27aa0; --setup:#93a1b2;
+  --ok:#5ccb8f; --warn:#e8b04f; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0f141a; --surface:#171e27; --fg:#e6ebf1; --muted:#93a1b2; --line:#283340;
+  --accent:#6fb1e0; --accent-soft:#1b2c3b;
+  --build:#9d93ff; --test:#e8b04f; --deploy:#3ec5b6; --monitor:#f27aa0; --setup:#93a1b2;
+  --ok:#5ccb8f; --warn:#e8b04f; color-scheme:dark}
+
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--fg);font-family:var(--body);font-size:15px;line-height:1.5}
+.wrap{max-width:860px;margin:0 auto;padding-block:28px 64px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));display:grid;gap:28px}
+h1,h2,h3{font-family:var(--display);margin:0;text-wrap:balance;letter-spacing:-.01em}
+h1{font-size:clamp(28px,5vw,38px);line-height:1.1}
+h2{font-size:20px}
+.eyebrow{font-family:var(--mono);font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+a{color:var(--accent)}
+.num{font-variant-numeric:tabular-nums}
+
+/* Header */
+header{display:grid;gap:16px}
+.stats{display:flex;flex-wrap:wrap;gap:10px 28px;align-items:baseline}
+.stat b{font-family:var(--display);font-size:28px;display:block;line-height:1}
+.stat span{color:var(--muted);font-size:13px}
+.bar{height:10px;border-radius:99px;background:var(--line);overflow:hidden}
+.bar i{display:block;height:100%;background:var(--accent);width:0;transition:width .4s}
+.domains{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}
+.dom{display:grid;gap:6px;font-size:13px}
+.dom .bar{height:6px}
+.dom .lbl{display:flex;justify-content:space-between;gap:6px}
+@media (max-width:560px){.domains{grid-template-columns:repeat(2,minmax(0,1fr))}}
+
+/* Timeline */
+.weeks{display:grid;gap:12px}
+.week{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:16px 18px;display:grid;gap:10px;border-left:4px solid var(--c)}
+.week.now{box-shadow:0 0 0 2px var(--c)}
+.week.done-all{opacity:.72}
+.whead{display:flex;flex-wrap:wrap;align-items:baseline;gap:6px 12px}
+.whead h3{font-size:17px}
+.tag{font-family:var(--mono);font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--c);border:1px solid var(--c);border-radius:99px;padding:1px 8px}
+.dates{color:var(--muted);font-size:13px}
+.wcount{margin-left:auto;font-family:var(--mono);font-size:13px;color:var(--muted)}
+.pill-now{font-family:var(--mono);font-size:11px;background:var(--c);color:var(--surface);border-radius:99px;padding:1px 8px}
+ul.tasks{list-style:none;margin:0;padding:0;display:grid;gap:2px}
+.tasks label{display:flex;gap:10px;align-items:flex-start;padding:5px 4px;border-radius:6px;cursor:pointer}
+.tasks label:hover{background:var(--accent-soft)}
+.tasks input{margin-top:3px;width:17px;height:17px;accent-color:var(--c);flex:none}
+.tasks input:checked + span{color:var(--muted);text-decoration:line-through}
+.tasks input:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.kind{font-family:var(--mono);font-size:11px;color:var(--muted);margin-left:6px}
+
+/* Scores */
+section.card{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:18px;display:grid;gap:14px}
+.score-form{display:flex;flex-wrap:wrap;gap:10px;align-items:end}
+.score-form label{display:grid;gap:3px;font-size:12px;color:var(--muted)}
+.score-form input{width:64px;font:inherit;font-size:15px;padding:6px 8px;border:1px solid var(--line);border-radius:6px;background:var(--bg);color:var(--fg)}
+button{font:inherit;font-weight:600;font-size:14px;padding:8px 14px;border-radius:8px;border:0;background:var(--accent);color:var(--surface);cursor:pointer}
+button:focus-visible{outline:2px solid var(--fg);outline-offset:2px}
+button:disabled{opacity:.5;cursor:default}
+.attempts{display:grid;gap:10px}
+.attempt{display:grid;grid-template-columns:90px repeat(4,minmax(0,1fr)) 64px;gap:8px;align-items:center;font-size:13px}
+.attempt .cell{display:grid;gap:3px}
+.mini{height:6px;border-radius:99px;background:var(--line);position:relative;overflow:visible}
+.mini i{display:block;height:100%;border-radius:99px}
+.mini::after{content:"";position:absolute;left:70%;top:-3px;bottom:-3px;width:1px;background:var(--fg);opacity:.5}
+.total{font-family:var(--mono);font-weight:500;text-align:right}
+.total.pass{color:var(--ok)} .total.fail{color:var(--warn)}
+.hint{color:var(--muted);font-size:13px;margin:0}
+.attempt.head{color:var(--muted);font-family:var(--mono);font-size:11px;text-transform:uppercase;letter-spacing:.06em}
+@media (max-width:560px){.attempt{grid-template-columns:70px repeat(4,minmax(0,1fr)) 48px;gap:6px}}
+
+.courses{list-style:none;margin:0;padding:0;display:grid;gap:8px;counter-reset:c}
+.course{display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:4px 12px;align-items:center;padding:10px 12px;border:1px solid var(--line);border-radius:10px;border-left:4px solid var(--c)}
+.course.is-done{opacity:.6}
+.course.is-done .cname{text-decoration:line-through}
+.course input{width:18px;height:18px;accent-color:var(--c);margin:0}
+.course input:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.cname{font-weight:600}
+.cmeta{grid-column:2/4;font-size:13px;color:var(--muted)}
+.cwhen{font-family:var(--mono);font-size:12px;color:var(--c);white-space:nowrap}
+ol.courses .cname::before{counter-increment:c;content:counter(c)". ";color:var(--muted);font-weight:500}
+h3.sub{font-size:15px;color:var(--muted);font-weight:500}
+.links{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:6px 18px;font-size:14px}
+.status{font-size:13px;color:var(--muted)}
+@media (prefers-reduced-motion:reduce){.bar i{transition:none}}
+</style>
+
+<div class="wrap">
+  <header>
+    <div class="eyebrow">LangChain Certified Agent Engineer · Nexaminds</div>
+    <h1>Ruta LCAE</h1>
+    <div class="stats">
+      <div class="stat"><b class="num" id="pct">0%</b><span>completado</span></div>
+      <div class="stat"><b class="num" id="days">–</b><span>días al examen (11 dic)</span></div>
+      <div class="stat"><b class="num" id="best">–</b><span>mejor práctica / 40 · pasa con 28</span></div>
+    </div>
+    <div class="bar" aria-hidden="true"><i id="overall"></i></div>
+    <div class="domains" id="domains"></div>
+    <div class="status" id="status">Cargando progreso…</div>
+  </header>
+
+  <section class="card" aria-labelledby="cr-h">
+    <h2 id="cr-h">Ruta de cursos</h2>
+    <ol class="courses" id="courses"></ol>
+    <h3 class="sub">Para la vacante, después o en paralelo</h3>
+    <ul class="courses extra" id="courses-extra"></ul>
+  </section>
+
+  <div class="weeks" id="weeks"></div>
+
+  <section class="card" aria-labelledby="sc-h">
+    <h2 id="sc-h">Practice exams</h2>
+    <p class="hint">10 preguntas por sección. La línea marca 7/10, el ritmo para aprobar.</p>
+    <form class="score-form" id="score-form">
+      <label for="s-build">Build<input id="s-build" type="number" min="0" max="10" required></label>
+      <label for="s-test">Test<input id="s-test" type="number" min="0" max="10" required></label>
+      <label for="s-deploy">Deploy<input id="s-deploy" type="number" min="0" max="10" required></label>
+      <label for="s-monitor">Monitor<input id="s-monitor" type="number" min="0" max="10" required></label>
+      <button type="submit" id="s-save">Guardar intento</button>
+    </form>
+    <div class="attempts" id="attempts"><p class="hint">Aún no hay intentos. Haz el diagnóstico y registra tu puntaje aquí.</p></div>
+  </section>
+
+  <section class="card" aria-labelledby="ln-h">
+    <h2 id="ln-h">Links</h2>
+    <div class="links">
+      <a href="https://academy.langchain.com/bundles/lcae-prerequisite-courses">Cursos (bundle gratis)</a>
+      <a href="https://academy.langchain.com/courses/lcae-practice-exam">Practice exam</a>
+      <a href="https://docs.langchain.com">docs.langchain.com</a>
+      <a href="https://smith.langchain.com">LangSmith</a>
+      <a href="https://academy.langchain.com/pages/certifications-lcae">Página de la certificación</a>
+      <a href="https://cx-v2.talview.com/login?driveScheduleId=114879&tid=3916&from=/scheduling/drive-registration">Agendar examen (Talview)</a>
+      <a href="https://github.com/leonardos4enz/AI-Engineer">Repo AI-Engineer</a>
+      <a href="https://remotive.com/remote/jobs/artificial-intelligence/lang-chain-deployment-ai-engineer-5647177">Vacante Nexaminds</a>
+    </div>
+  </section>
+</div>
+
+<script>
+const EXAM = new Date("2026-12-11T09:00:00");
+const WEEKS = [
+  {id:"w0", name:"Arranque", dom:"setup", from:"2026-10-30", to:"2026-11-01", tasks:[
+    ["setup-tools","Python 3.12, uv, Git, Docker"],["setup-ls","Cuenta y API key de LangSmith"],
+    ["setup-llm","API key de LLM con límite de US$20"],["enroll","Inscribirme a los 5 cursos"],
+    ["diag","Practice exam diagnóstico","examen"]]},
+  {id:"w1", name:"LangChain y create_agent", dom:"build", from:"2026-11-02", to:"2026-11-08", tasks:[
+    ["c1","Curso: Introduction to LangChain","curso"],["lg","Bases de LangGraph","extra"],
+    ["p1-ingest","DocuAgent: ingesta a pgvector","proyecto"],["p1-agent","DocuAgent: agente con citas","proyecto"],
+    ["p1-mw","Middleware propio","proyecto"],["n1","Notas de Build","notas"]]},
+  {id:"w2", name:"Deep Agents", dom:"build", from:"2026-11-09", to:"2026-11-15", tasks:[
+    ["c2","Curso: Introduction to Deep Agents","curso"],["p2-base","Job Hunter: deep agent con subagente","proyecto"],
+    ["p2-md","AGENTS.md y SKILL.md","proyecto"],["p2-try","Probarlo con la vacante de Nexaminds","proyecto"],
+    ["n2","Nota: create_agent vs deepagents","notas"]]},
+  {id:"w3", name:"Evals con LangSmith", dom:"test", from:"2026-11-16", to:"2026-11-22", tasks:[
+    ["c3","Curso: Building Reliable Agents","curso"],["p1-ds","Dataset golden de 30 a 50 preguntas","proyecto"],
+    ["p1-ev","Evaluadores: código y LLM-judge","proyecto"],["p1-align","Alinear el LLM-judge","proyecto"],
+    ["p1-exp","Comparar 2 experimentos","proyecto"],["p1-ci","Evals en GitHub Actions","proyecto"]]},
+  {id:"w4", name:"LangSmith Deployment", dom:"deploy", from:"2026-11-23", to:"2026-11-29", tasks:[
+    ["c4","Curso: Introduction to LangSmith Deployment","curso"],["p1-lg","langgraph.json y langgraph dev","proyecto"],
+    ["p1-dep","Desplegar DocuAgent","proyecto"],["p1-auth","Custom auth y authz por usuario","proyecto"],
+    ["p1-th","Threads y secretos","proyecto"],["msg-raul","Mandarle avance a Raúl","vacante"]]},
+  {id:"w5", name:"Monitoreo en producción", dom:"monitor", from:"2026-11-30", to:"2026-12-06", tasks:[
+    ["c5","Curso: Monitoring Production Agents","curso"],["p1-fb","Feedback de usuario","proyecto"],
+    ["p1-oe","Online evals","proyecto"],["p1-dash","Dashboard y una alerta","proyecto"],
+    ["post","Post técnico con métricas","portafolio"],["sched","Agendar el examen","examen"]]},
+  {id:"w6", name:"Repaso y examen", dom:"setup", from:"2026-12-07", to:"2026-12-13", tasks:[
+    ["pe2","Practice exam con 34/40 o más","examen"],["sim","Simulacro de 2 h sin IA","examen"],
+    ["exam","Presentar LCAE","examen"],["cv","CV actualizado y pedir referral","vacante"]]},
+];
+const ACAD = "https://academy.langchain.com/courses/";
+// [doneId, slug, name, domain, lessons, when, why]
+const COURSES = [
+  ["diag","lcae-practice-exam","LCAE Practice Exam (diagnóstico)","setup",5,"Sem 0","Para ver de dónde partes"],
+  ["c1","foundation-introduction-to-langchain-python","Introduction to LangChain – Python","build",30,"Sem 1","create_agent, tools, middleware"],
+  ["c2","foundation-introduction-to-deepagents","Introduction to Deep Agents","build",46,"Sem 2","deepagents, AGENTS.md, SKILL.md, sandbox"],
+  ["c3","building-reliable-agents","Building Reliable Agents with LangSmith","test",29,"Sem 3","Datasets, evaluadores, experimentos"],
+  ["c4","langsmith-deployment","Introduction to LangSmith Deployment","deploy",37,"Sem 4","Deployments, threads, auth"],
+  ["c5","production-monitoring","Monitoring Production Agents","monitor",37,"Sem 5","Traces, costos, alertas"],
+  ["pe2","lcae-practice-exam","LCAE Practice Exam (final)","setup",5,"Sem 6","Meta: 34/40 o más"],
+];
+const EXTRA = [
+  ["lg","intro-to-langgraph","Introduction to LangGraph – Python","build",55,"Sem 1–2","La vacante lo pide explícitamente"],
+  ["x-engine","langsmith-engine","Autonomous Agent Improvement with LangSmith Engine","test",12,"Sem 6","Repaso del ciclo completo"],
+  ["x-research","deep-research-with-langgraph","Project: Deep Research with LangGraph","build",null,"Después","Multi-agente, para el portafolio"],
+  ["x-ambient","ambient-agents","Project: Ambient Agents with LangGraph","build",null,"Después","Human-in-the-loop y evals"],
+  ["x-fleet","quickstart-agent-builder","LangSmith Fleet","deploy",null,"Después","Nice-to-have de la vacante"],
+];
+function courseRow([id,slug,name,dom,les,when,why]){
+  return `<li class="course${done[id]?" is-done":""}" style="--c:var(--${dom})">
+    <input type="checkbox" id="k-${id}" data-id="${id}" aria-label="${name} completado" ${done[id]?"checked":""} ${canWrite?"":"disabled"}>
+    <a class="cname" href="${ACAD+slug}">${name}</a>
+    <span class="cwhen">${when}</span>
+    <span class="cmeta">${les?les+" lecciones · ":""}${why}</span></li>`;
+}
+const DOMAINS = [["build","Build"],["test","Test"],["deploy","Deploy"],["monitor","Monitor"]];
+const LABEL = {setup:"Preparación",build:"Build",test:"Test",deploy:"Deploy",monitor:"Monitor"};
+const MONTHS = ["ene","feb","mar","abr","may","jun","jul","ago","sep","oct","nov","dic"];
+const fmt = s => { const d = new Date(s+"T12:00:00"); return d.getDate()+" "+MONTHS[d.getMonth()]; };
+
+let done = {};      // taskId -> true
+let attempts = [];  // [{id, at, build, test, deploy, monitor}]
+let db = null, canWrite = true;
+
+const $ = id => document.getElementById(id);
+const today = new Date();
+
+function render(){
+  const all = WEEKS.flatMap(w=>w.tasks.map(t=>t[0]));
+  const n = all.filter(id=>done[id]).length;
+  const pct = Math.round(n/all.length*100);
+  $("pct").textContent = pct+"%";
+  $("overall").style.width = pct+"%";
+  $("days").textContent = Math.max(0, Math.ceil((EXAM - today)/864e5));
+  const best = attempts.reduce((m,a)=>Math.max(m,a.build+a.test+a.deploy+a.monitor), -1);
+  $("best").textContent = best<0 ? "–" : best;
+
+  $("domains").innerHTML = DOMAINS.map(([k,l])=>{
+    const ids = WEEKS.filter(w=>w.dom===k).flatMap(w=>w.tasks.map(t=>t[0]));
+    const p = Math.round(ids.filter(i=>done[i]).length/ids.length*100);
+    return `<div class="dom" style="--c:var(--${k})"><div class="lbl"><span>${l}</span><span class="num">${p}%</span></div><div class="bar"><i style="width:${p}%;background:var(--${k})"></i></div></div>`;
+  }).join("");
+
+  $("courses").innerHTML = COURSES.map(courseRow).join("");
+  $("courses-extra").innerHTML = EXTRA.map(courseRow).join("");
+
+  const wk = $("weeks");
+  wk.innerHTML = "";
+  WEEKS.forEach((w,i)=>{
+    const from = new Date(w.from+"T00:00:00"), to = new Date(w.to+"T23:59:59");
+    const now = today>=from && today<=to;
+    const c = w.tasks.filter(t=>done[t[0]]).length;
+    const el = document.createElement("article");
+    el.className = "week"+(now?" now":"")+(c===w.tasks.length?" done-all":"");
+    el.style.setProperty("--c",`var(--${w.dom})`);
+    el.innerHTML = `<div class="whead"><span class="tag">${LABEL[w.dom]}</span><h3>Semana ${i} · ${w.name}</h3>
+      <span class="dates">${fmt(w.from)} – ${fmt(w.to)}</span>${now?'<span class="pill-now">esta semana</span>':''}
+      <span class="wcount num">${c}/${w.tasks.length}</span></div>
+      <ul class="tasks">${w.tasks.map(([id,txt,kind])=>`<li><label for="t-${id}"><input type="checkbox" id="t-${id}" data-id="${id}" ${done[id]?"checked":""} ${canWrite?"":"disabled"}><span>${txt}${kind?`<span class="kind">${kind}</span>`:""}</span></label></li>`).join("")}</ul>`;
+    wk.appendChild(el);
+  });
+
+  const box = $("attempts");
+  if(!attempts.length){ box.innerHTML = '<p class="hint">Aún no hay intentos. Haz el diagnóstico y registra tu puntaje aquí.</p>'; return; }
+  box.innerHTML = `<div class="attempt head"><span>Fecha</span>${DOMAINS.map(d=>`<span>${d[1]}</span>`).join("")}<span style="text-align:right">Total</span></div>` +
+    attempts.map(a=>{
+      const tot = a.build+a.test+a.deploy+a.monitor;
+      return `<div class="attempt"><span class="num">${fmt(a.at)}</span>${DOMAINS.map(([k])=>`<div class="cell"><span class="num">${a[k]}/10</span><div class="mini"><i style="width:${a[k]*10}%;background:var(--${k})"></i></div></div>`).join("")}<span class="total num ${tot>=28?"pass":"fail"}">${tot}/40</span></div>`;
+    }).join("");
+}
+
+document.querySelector(".wrap").addEventListener("change", async e=>{
+  const id = e.target.dataset && e.target.dataset.id;
+  if(!id || !db) return;
+  const val = e.target.checked;
+  if(val) done[id]=true; else delete done[id];
+  render();
+  try{
+    if(val) await db.doc("done/"+id).set({done:true, at:new Date().toISOString()});
+    else await db.doc("done/"+id).delete();
+  }catch(err){ $("status").textContent = "No se pudo guardar. Recarga la página e intenta de nuevo."; }
+});
+
+$("score-form").addEventListener("submit", async e=>{
+  e.preventDefault();
+  if(!db) return;
+  const v = k => Math.max(0, Math.min(10, parseInt($("s-"+k).value,10)||0));
+  const doc = {at:new Date().toISOString().slice(0,10), build:v("build"), test:v("test"), deploy:v("deploy"), monitor:v("monitor")};
+  $("s-save").disabled = true;
+  try{ await db.collection("scores").add(doc); e.target.reset(); $("status").textContent = "Intento guardado."; }
+  catch(err){ $("status").textContent = "No se pudo guardar el intento."; }
+  $("s-save").disabled = false;
+});
+
+render();
+
+(async()=>{
+  db = await window.claude?.use?.("db") ?? null;
+  if(!db){ canWrite=false; $("status").textContent = "Vista de solo lectura: el progreso no se puede cargar aquí."; $("s-save").disabled=true; render(); return; }
+  try{
+    const user = await window.claude.use("user");
+    const cw = user ? await user.can("data.write") : null;
+    if(cw===false){ canWrite=false; $("s-save").disabled=true; }
+  }catch(e){}
+  $("status").textContent = "";
+  db.collection("done").onSnapshot(s=>{
+    done = {}; s.docs.forEach(d=>{ if(d.data()?.done) done[d.id]=true; }); render();
+  }, ()=>{ $("status").textContent = "Se perdió la conexión con el progreso. Recarga la página."; });
+  db.collection("scores").orderBy("at").onSnapshot(s=>{
+    attempts = s.docs.map(d=>({id:d.id, ...d.data()})); render();
+  }, ()=>{});
+})();
+</script>
