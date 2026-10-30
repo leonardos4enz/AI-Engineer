@@ -30,6 +30,8 @@
    JWT_SECRET=<cadena larga aleatoria>
    API_TOKEN=<opcional, para actualizar por API>
    ```
+   ⚠️ En el editor de Easypanel `#` inicia un comentario: si un valor lleva `#`, ponlo entre comillas (`ADMIN_PASSWORD="..."`). Al arrancar, el log muestra cuántos caracteres tiene la contraseña para que lo compruebes.
+
    La base `ai_engineer` se crea sola al arrancar y solo usa tablas `lcae_*`. No toca las de Amigatos.
 3. Domains → puerto **80**. Deploy y comprueba `/health` → `ok`.
 

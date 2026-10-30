@@ -1,6 +1,16 @@
 # Contrato del tablero (frontend ↔ backend)
 
-App de un solo usuario (Leo). Leer es público; escribir requiere sesión.
+App de un solo usuario (Leo). Todo requiere sesión salvo `/login`, `/api/login`, `/api/me`, `/health` y los assets estáticos.
+
+## Páginas
+
+| Ruta | Comportamiento |
+|---|---|
+| `/login` | Sirve `public/login.html`. Con sesión válida → 302 a `/` |
+| `/` (y `/index.html`) | Sirve `public/index.html` con sesión válida; sin sesión → 302 a `/login` |
+| Otros archivos de `public/` | Estáticos y públicos (`theme.css`, etc.) |
+
+Flujo: el login hace `POST /api/login` y, con 200, navega a `/`. El logout hace `POST /api/logout` y navega a `/login`. Si cualquier llamada de la API responde 401, el tablero navega a `/login`.
 
 Stack: Node 22 + Express + PostgreSQL (`pg`) + `jsonwebtoken`. Frontend vanilla sin build en `public/index.html`, servido estático por Express.
 
@@ -33,7 +43,7 @@ Todas las respuestas JSON salvo `/health`. Errores: `{ "error": "mensaje en espa
 | Método | Ruta | Auth | Body | Respuesta |
 |---|---|---|---|---|
 | GET | `/health` | no | | `ok` (texto) |
-| GET | `/api/progress` | no | | `{ done: { [taskId]: isoString }, scores: [{ id, at: "YYYY-MM-DD", build, test, deploy, monitor }] }` (scores ordenados por `at`, luego `id`) |
+| GET | `/api/progress` | sí (lectura: cookie o Bearer, sin exigir `X-Requested-With`) | | `{ done: { [taskId]: isoString }, scores: [{ id, at: "YYYY-MM-DD", build, test, deploy, monitor }] }` (scores ordenados por `at`, luego `id`) |
 | GET | `/api/me` | no | | `{ loggedIn: boolean, loginEnabled: boolean }` |
 | POST | `/api/login` | no | `{ password }` | 200 `{ ok: true }` + cookie `session`; 401 si es incorrecta; 429 tras 5 fallos en 15 min por IP; 503 si el login está deshabilitado |
 | POST | `/api/logout` | no | | `{ ok: true }`, borra la cookie |

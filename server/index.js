@@ -16,7 +16,9 @@ if (ADMIN_PASSWORD && !JWT_SECRET) {
   console.error('[ai-engineer] JWT_SECRET es obligatoria cuando hay ADMIN_PASSWORD.');
   process.exit(1);
 }
-if (!LOGIN_ENABLED) console.warn('[ai-engineer] ADMIN_PASSWORD no está definida: login deshabilitado (solo lectura).');
+if (!LOGIN_ENABLED) console.warn('[ai-engineer] ADMIN_PASSWORD no está definida: login deshabilitado.');
+// Solo la longitud, nunca el valor: sirve para detectar si el panel recortó la contraseña (p. ej. un "#" sin comillas).
+else console.log(`[ai-engineer] login habilitado (contraseña de ${ADMIN_PASSWORD.length} caracteres)`);
 
 const COOKIE = 'session';
 const SESSION_DAYS = 30;
@@ -100,11 +102,29 @@ const app = express();
 app.set('trust proxy', 1); // Easypanel/Traefik
 app.disable('x-powered-by');
 app.use(express.json({ limit: '10kb' }));
-app.use(express.static(path.join(__dirname, '..', 'public')));
+const PUBLIC_DIR = path.join(__dirname, '..', 'public');
+
+// Páginas: el tablero solo con sesión; el login redirige al tablero si ya hay sesión.
+app.get(['/', '/index.html'], (req, res) => {
+  if (!sessionValid(req)) return res.redirect(302, '/login');
+  res.set('Cache-Control', 'no-store');
+  res.sendFile(path.join(PUBLIC_DIR, 'index.html'));
+});
+app.get(['/login', '/login.html'], (req, res) => {
+  if (sessionValid(req)) return res.redirect(302, '/');
+  res.sendFile(path.join(PUBLIC_DIR, 'login.html'));
+});
+app.use(express.static(PUBLIC_DIR, { index: false }));
 
 app.get('/health', (req, res) => res.type('text').send('ok'));
 
 const wrap = (fn) => (req, res, next) => Promise.resolve(fn(req, res, next)).catch(next);
+
+// Lectura: Bearer API_TOKEN o cookie de sesión (sin exigir X-Requested-With).
+function requireRead(req, res, next) {
+  if (bearerValid(req) || sessionValid(req)) return next();
+  res.status(401).json({ error: 'Inicia sesión' });
+}
 
 // Escritura: Bearer API_TOKEN, o cookie de sesión + X-Requested-With: fetch (defensa CSRF simple).
 function requireAuth(req, res, next) {
@@ -116,7 +136,7 @@ function requireAuth(req, res, next) {
   res.status(401).json({ error: 'Inicia sesión' });
 }
 
-app.get('/api/progress', wrap(async (req, res) => {
+app.get('/api/progress', requireRead, wrap(async (req, res) => {
   res.json(await db.getProgress());
 }));
 
