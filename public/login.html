@@ -5,11 +5,13 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="color-scheme" content="light dark">
   <meta name="robots" content="noindex">
-  <title>Ruta LCAE · Entrar</title>
+  <title>AI Engineer · Entrar</title>
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600&family=Figtree:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap">
   <link rel="stylesheet" href="/theme.css">
+  <script src="/js/mascot.js" defer></script>
   <style>
     html, body { height: 100%; }
     body {
@@ -84,16 +86,12 @@
     .login.is-leaving { opacity: 0; transform: translateY(-8px) scale(.985); }
 
     .brand { display: grid; justify-items: center; text-align: center; gap: 6px; margin-bottom: 26px; }
-    .mark {
-      width: 52px; height: 52px;
-      display: grid; place-items: center;
-      border-radius: 16px;
-      background: var(--accent-soft);
-      color: var(--accent);
-      margin-bottom: 10px;
+    .agent {
+      display: block;
+      width: 88px; height: 88px; /* reserva el espacio antes de que cargue el componente */
+      margin-bottom: 12px;
+      filter: drop-shadow(0 12px 18px color-mix(in srgb, var(--accent) 32%, transparent));
     }
-    .mark svg { width: 28px; height: 28px; }
-    .mark .route { stroke-dasharray: 60; stroke-dashoffset: 60; animation: draw 1.4s .35s var(--ease) forwards; }
     @keyframes draw { to { stroke-dashoffset: 0; } }
     .brand h1 { font-size: 26px; }
     .brand p { color: var(--muted); font-size: 14.5px; }
@@ -167,7 +165,6 @@
     }
     @media (prefers-reduced-motion: reduce) {
       .blob { animation: none; }
-      .mark .route { stroke-dashoffset: 0; animation: none; }
       .submit.is-done .check path { stroke-dashoffset: 0; }
       .submit .spinner { animation: spin 1.2s linear infinite !important; animation-duration: 1.2s !important; animation-iteration-count: infinite !important; }
     }
@@ -184,15 +181,9 @@
   <main>
     <section class="card login" id="card" aria-labelledby="title">
       <header class="brand">
-        <div class="mark" aria-hidden="true">
-          <svg viewBox="0 0 28 28" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <path class="route" d="M7 22c0-4 3-5.5 7-5.5s7-1.5 7-5.5-3-5-7-5" />
-            <circle cx="7" cy="22" r="2.3" fill="currentColor" stroke="none" />
-            <circle cx="21" cy="6" r="2.6" />
-          </svg>
-        </div>
-        <h1 id="title">Ruta LCAE</h1>
-        <p>Tu camino a la certificación LangChain</p>
+        <agent-eyes class="agent" id="agent" face follow size="88" mood="sleep" aria-hidden="true"></agent-eyes>
+        <h1 id="title">AI Engineer</h1>
+        <p>Tu espacio para convertirte en AI Engineer</p>
       </header>
 
       <form id="form" novalidate>
@@ -231,7 +222,7 @@
     </section>
   </main>
 
-  <footer class="mono">LangChain Certified Agent Engineer · 2026</footer>
+  <footer class="mono">LCAE · proyectos · vacantes</footer>
 
   <script>
   (() => {
@@ -245,6 +236,57 @@
     const submit = document.getElementById('submit');
     const status = document.getElementById('submit-status');
     const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const agent = document.getElementById('agent');
+
+    /* ---------- El agente ----------
+       Despierta al cargar (sleep → idle), sigue el cursor, mira el campo al enfocarlo,
+       se pone tímido mientras escribes la contraseña oculta y se asoma si la muestras. */
+    const ag = {
+      awake: false,
+      off: false, // login deshabilitado: se queda dormido
+      call(fn, ...args) { if (typeof agent[fn] === 'function') agent[fn](...args); }
+    };
+    let measureCtx = null;
+    // Punto (coords de página) donde está el cursor de texto dentro del campo.
+    function caretPoint() {
+      const r = pw.getBoundingClientRect();
+      const cs = getComputedStyle(pw);
+      let w = 0;
+      try {
+        measureCtx = measureCtx || document.createElement('canvas').getContext('2d');
+        measureCtx.font = cs.font || (cs.fontWeight + ' ' + cs.fontSize + ' ' + cs.fontFamily);
+        const end = pw.selectionEnd == null ? pw.value.length : pw.selectionEnd;
+        const before = pw.value.slice(0, end);
+        w = measureCtx.measureText(pw.type === 'password' ? '•'.repeat(before.length) : before).width;
+      } catch (_) {}
+      const left = r.left + parseFloat(cs.paddingLeft || 0);
+      const x = Math.min(left + w - pw.scrollLeft, r.right - 48);
+      return { x: Math.max(left, x) + window.scrollX, y: r.top + r.height / 2 + window.scrollY };
+    }
+    function syncAgent() {
+      if (!ag.awake) return;
+      const focused = document.activeElement === pw && !pw.disabled;
+      let mood = 'idle';
+      if (ag.off) mood = 'sleep';
+      else if (focused && pw.type === 'text') mood = 'focus';
+      else if (focused && pw.value) mood = 'shy';
+      agent.setAttribute('mood', mood);
+      if (focused && !ag.off) { const c = caretPoint(); ag.call('lookAt', c.x, c.y); }
+      else ag.call('lookAt', null);
+    }
+    function wakeUp() {
+      setTimeout(() => {
+        ag.awake = true;
+        if (ag.off) return;
+        agent.setAttribute('mood', 'idle');
+        setTimeout(() => ag.call('blink'), 420);
+        // un momento mirando alrededor antes de fijarse en el campo
+        setTimeout(syncAgent, reduceMotion ? 0 : 650);
+      }, reduceMotion ? 150 : 700);
+    }
+    if (document.readyState === 'complete') wakeUp();
+    else window.addEventListener('load', wakeUp, { once: true });
+    ['focus', 'blur', 'input', 'keyup', 'click', 'select'].forEach((ev) => pw.addEventListener(ev, syncAgent));
 
     const MSG = {
       401: 'Contraseña incorrecta',
@@ -289,6 +331,9 @@
 
     function disableForm(text) {
       disabled = true;
+      ag.off = true;
+      agent.setAttribute('mood', 'sleep');
+      ag.call('lookAt', null);
       pw.disabled = true;
       toggle.disabled = true;
       submit.disabled = true;
@@ -305,6 +350,8 @@
       pw.focus({ preventScroll: true });
       const end = pw.value.length;
       try { pw.setSelectionRange(end, end); } catch (_) {}
+      syncAgent();
+      if (show) ag.call('blink');
     });
 
     pw.addEventListener('input', () => { if (errorEl.textContent && !disabled) clearError(); });
@@ -313,7 +360,7 @@
       e.preventDefault();
       if (busy || disabled) return;
       const password = pw.value;
-      if (!password) { showError(MSG.empty); pw.focus(); return; }
+      if (!password) { showError(MSG.empty); ag.call('blink'); pw.focus(); return; }
 
       clearError();
       setLoading(true);
@@ -328,6 +375,7 @@
       } catch (_) {
         setLoading(false);
         showError(MSG.network);
+        ag.call('react', 'sad', 1500);
         pw.focus();
         return;
       }
@@ -336,7 +384,9 @@
         submit.classList.remove('is-loading');
         submit.classList.add('is-done');
         status.textContent = 'Acceso concedido';
-        const wait = reduceMotion ? 150 : 650;
+        ag.call('lookAt', null);
+        ag.call('react', 'happy', 3000);
+        const wait = reduceMotion ? 150 : 900;
         setTimeout(() => {
           card.classList.add('is-leaving');
           document.body.classList.add('is-leaving');
@@ -348,6 +398,7 @@
       setLoading(false);
       if (res.status === 503) { disableForm(MSG[503]); return; }
       showError(MSG[res.status] || MSG.generic);
+      ag.call('react', 'sad', res.status === 429 ? 4000 : 1500);
       if (res.status === 401) pw.select();
       pw.focus();
     });
@@ -369,6 +420,7 @@
       document.body.classList.remove('is-leaving');
       submit.classList.remove('is-done');
       setLoading(false);
+      syncAgent();
     });
   })();
   </script>

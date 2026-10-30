@@ -14,6 +14,44 @@ Flujo: el login hace `POST /api/login` y, con 200, navega a `/`. El logout hace 
 
 Stack: Node 22 + Express + PostgreSQL (`pg`) + `jsonwebtoken`. Frontend vanilla sin build en `public/index.html`, servido estático por Express.
 
+## Frontend: estructura del hub
+
+La app es **AI Engineer**, el espacio de Leo para todo lo de su camino a AI Engineer. La certificación LCAE es la primera **ruta**; vendrán más.
+
+```
+public/
+  index.html          shell del hub (con sesión)
+  login.html          login (público)
+  theme.css           tokens y componentes compartidos
+  favicon.svg         el agente, estático
+  js/mascot.js        <agent-eyes>, el agente animado
+  data/tracks.js      registro de rutas: window.TRACKS = [lcae, …]
+  data/lcae.js        datos de la ruta LCAE (semanas, cursos, extras, fecha de examen, links)
+  data/projects.js    window.PROJECTS: proyectos de portafolio
+  data/jobs.js        window.JOBS: vacantes objetivo
+```
+
+Navegación por hash: `#inicio`, `#ruta/lcae/resumen|plan|cursos|examenes`, `#proyectos`, `#vacantes`.
+
+Los ids de tareas son globales (una sola tabla `lcae_done`). Una ruta nueva debe usar ids con su propio prefijo (`ml-…`, `aws-…`) para no chocar.
+
+### `<agent-eyes>` (js/mascot.js)
+
+Custom element con Shadow DOM, sin dependencias. Cargar con `<script src="/js/mascot.js" defer></script>`.
+
+| Atributo | Valores | Default |
+|---|---|---|
+| `size` | píxeles del lado | `40` |
+| `face` | presente = dibuja la cara (squircle) detrás de los ojos | ausente |
+| `follow` | presente = los ojos siguen el puntero en toda la página | ausente |
+| `mood` | `idle` · `happy` · `sad` · `shy` · `focus` · `sleep` | `idle` |
+
+- `idle`: mira alrededor con movimientos rápidos y pausas (sacádicos) y parpadea a intervalos aleatorios (2–6 s, a veces doble).
+- `happy`: ojos en arco (^ ^) con un pequeño rebote. `sad`: ojos caídos. `shy`: ojos cerrados o mirando a otro lado (para cuando se escribe la contraseña). `focus`: pupilas más chicas, mirando a un punto. `sleep`: líneas cerradas con respiración lenta.
+- Métodos: `blink()`, `react(mood, ms = 1200)` (cambia de ánimo un rato y vuelve al anterior), `lookAt(x, y)` en coordenadas de la página, o `lookAt(null)` para volver a idle o follow.
+- Colores: `--agent-face` (default `var(--accent)`) y `--agent-eye` (default `var(--on-accent)`; sin `face` usa `var(--fg)`).
+- Con `prefers-reduced-motion`: sin sacádicos, sin seguir el puntero, sin rebotes; solo parpadeo suave.
+
 ## Variables de entorno
 
 | Variable | Uso |

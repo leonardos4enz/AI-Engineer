@@ -11,7 +11,8 @@ Leo es desarrollador full stack (3–4 años) que está pivotando a AI Engineer.
 - Hacer quizzes tipo examen (opción múltiple, en inglés) sobre los focus areas de [01-certificacion/examen-lcae.md](01-certificacion/examen-lcae.md)
 - Mantener actualizado [02-plan/progreso.md](02-plan/progreso.md) cuando reporte avance
 
-## Tablero
+## App "AI Engineer" (hub)
+Es el hub para todo lo de AI Engineer, no solo LCAE: rutas en `public/data/` (LCAE es la primera), proyectos, vacantes y el agente `<agent-eyes>` (`public/js/mascot.js`). Al sumar algo nuevo (ruta, proyecto, vacante), agrégalo como datos ahí.
 - En vivo: https://discord-ai-engineer.ppnoc4.easypanel.host (Easypanel, proyecto `discord`, servicio `ai-engineer`; base `ai-engineer` en el servidor `amigatos-db`. No tocar nada de Amigatos)
 - Código: `server/` + `public/index.html`, API en [CONTRACT.md](CONTRACT.md). Push a `main` y luego Implementar en Easypanel
 - Las variables de entorno con secretos las pone Leo, nunca Claude

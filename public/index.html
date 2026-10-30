@@ -3,26 +3,30 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<title>Ruta LCAE</title>
+<title>AI Engineer</title>
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600&family=Figtree:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap">
 <link rel="stylesheet" href="/theme.css">
 <style>
-/* Tablero Ruta LCAE. Shell: barra superior con navegación segmentada (barra inferior en teléfono).
-   Cuatro vistas: Hoy, Plan, Cursos, Exámenes. Paleta y movimiento salen de theme.css. */
+/* AI Engineer: el espacio de Leo para su camino a AI Engineer.
+   Shell: barra superior con navegación principal (Inicio, Rutas, Proyectos, Vacantes; barra inferior en teléfono)
+   y, dentro de una ruta, una sub-navegación segmentada (Resumen, Plan, Cursos, Exámenes).
+   Los datos salen de /data/*.js. Paleta y movimiento salen de theme.css. */
 
 .ic{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:1.75;stroke-linecap:round;stroke-linejoin:round;flex:none}
 .gutter{padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
 .shell{max-width:1040px;margin:0 auto}
 .muted{color:var(--muted)}
+agent-eyes{display:inline-block;flex:none;vertical-align:middle}
 
 /* ---------- Barra superior ---------- */
 .topbar{position:sticky;top:0;z-index:30;background:color-mix(in srgb,var(--bg) 82%,transparent);backdrop-filter:saturate(1.4) blur(14px);-webkit-backdrop-filter:saturate(1.4) blur(14px);border-bottom:1px solid color-mix(in srgb,var(--line) 70%,transparent)}
-.topbar .shell{display:flex;align-items:center;gap:16px;height:60px}
+.bar1{display:flex;align-items:center;gap:16px;height:60px}
 .brand{display:flex;align-items:center;gap:10px;font:600 15.5px/1 var(--font-display);letter-spacing:-.01em;color:var(--fg);white-space:nowrap}
-.brand-mark{width:28px;height:28px;border-radius:9px;display:grid;place-items:center;background:linear-gradient(135deg,var(--accent),var(--build));color:var(--on-accent);box-shadow:0 4px 12px -6px var(--accent)}
-.brand-mark svg{width:16px;height:16px;stroke-width:2}
+.brand:hover{text-decoration:none}
+.brand agent-eyes{width:30px;height:30px}
 .nav{position:relative;display:flex;gap:2px;margin:0 auto;padding:4px;background:var(--bg-tint);border-radius:12px}
 .nav a{position:relative;z-index:1;display:flex;align-items:center;gap:7px;padding:7px 14px;border-radius:9px;font:500 14px/1 var(--font-body);color:var(--muted);text-decoration:none;transition:color var(--t-fast) var(--ease)}
 .nav a:hover{color:var(--fg);text-decoration:none}
@@ -35,6 +39,18 @@
 .logout:hover{background:var(--surface-2);color:var(--fg)}
 .logout .ic{width:16px;height:16px}
 
+/* Sub-navegación de la ruta */
+.subbar{border-top:1px solid color-mix(in srgb,var(--line) 70%,transparent)}
+.sub-inner{display:flex;align-items:center;gap:18px;height:50px}
+.trk{display:flex;align-items:center;gap:10px;min-width:0;white-space:nowrap}
+.trk b{font:600 14px/1 var(--font-display);letter-spacing:-.01em;overflow:hidden;text-overflow:ellipsis}
+.trk-sel{font:600 14px/1.2 var(--font-display);color:var(--fg);background:var(--surface);border:1px solid var(--line);border-radius:9px;padding:6px 8px;max-width:220px}
+.subnav{position:relative;display:flex;gap:2px;padding:3px;background:var(--bg-tint);border-radius:11px}
+.subnav a{position:relative;z-index:1;padding:6px 13px;border-radius:8px;font:500 13.5px/1 var(--font-body);color:var(--muted);white-space:nowrap;text-align:center;transition:color var(--t-fast) var(--ease)}
+.subnav a:hover{color:var(--fg);text-decoration:none}
+.subnav a[aria-current="page"]{color:var(--fg)}
+.subnav .seg-ind{top:3px;bottom:3px;border-radius:8px}
+
 /* ---------- Vistas ---------- */
 main{padding-top:36px;padding-bottom:80px}
 .view{display:grid;gap:40px}
@@ -46,6 +62,8 @@ main{padding-top:36px;padding-bottom:80px}
 .block{display:grid;gap:16px}
 .block-head{display:flex;align-items:baseline;justify-content:space-between;gap:12px;flex-wrap:wrap}
 .block-head h2{font-size:18px}
+.block-head a{font-size:14px;display:inline-flex;align-items:center;gap:4px}
+.block-head a .ic{width:14px;height:14px}
 
 /* Esqueletos mientras carga */
 @keyframes shimmer{to{background-position:-200% 0}}
@@ -59,6 +77,12 @@ main{padding-top:36px;padding-bottom:80px}
 .bar{height:6px;border-radius:99px;background:color-mix(in srgb,var(--c,var(--accent)) 16%,transparent);overflow:hidden}
 .bar i{display:block;height:100%;width:0;border-radius:inherit;background:var(--c,var(--accent));transition:width 1s var(--ease)}
 .quiet *{transition:none !important}
+.st-ok{--c:var(--deploy);--cs:var(--deploy-soft)}
+.st-partial{--c:var(--test);--cs:var(--test-soft)}
+.st-gap{--c:var(--monitor);--cs:var(--monitor-soft)}
+.sbar{display:flex;gap:3px;height:8px}
+.sbar i{flex:none;display:block;height:100%;width:0;border-radius:99px;background:var(--c);transition:width 1s var(--ease)}
+
 
 /* ---------- Checkbox ---------- */
 .tasks{list-style:none;margin:0;padding:0;display:grid;gap:2px}
@@ -83,7 +107,47 @@ input:checked ~ .ttext .tt{background-size:100% 1px;color:var(--muted)}
 .tasks.lg .box{width:24px;height:24px;border-radius:8px}
 .tasks.lg .box svg{width:15px;height:15px}
 
-/* ---------- Hoy ---------- */
+/* ---------- Inicio ---------- */
+.hello{display:flex;align-items:center;gap:22px}
+.hello agent-eyes{width:72px;height:72px}
+.hello .vhead{min-width:0}
+.home{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:20px}
+.span2{grid-column:1/-1}
+.rcard{padding:24px 26px 18px;display:grid;gap:18px}
+.rc-top{display:grid;grid-template-columns:auto minmax(0,1fr);gap:24px;align-items:center}
+.rc-main{display:grid;gap:12px;min-width:0}
+.rc-title{display:grid;gap:6px}
+.rc-title h2{font-size:21px}
+.rc-stats{display:flex;flex-wrap:wrap;gap:8px 28px}
+.rc-stat{display:grid;gap:2px}
+.rc-stat b{font:600 22px/1.1 var(--font-display);letter-spacing:-.02em;justify-self:start}
+.rc-stat span{font-size:13px;color:var(--muted)}
+.rc-next{border-top:1px solid var(--line);padding-top:14px;display:flex;align-items:center;gap:16px}
+.rc-next-body{flex:1;min-width:0;display:grid;gap:4px}
+.rc-next-body .label{padding-left:2px}
+.rc-next .tasks{margin:0 -12px}
+.rc-next .btn{flex:none;text-decoration:none}
+.rc-next .btn .ic{width:16px;height:16px}
+.ring-wrap.sm{width:100px;height:100px}
+.ring-wrap.sm .ring-center b{font-size:23px}
+.ring-wrap.sm .ring-center span{font-size:11px}
+.pminis{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:20px}
+.mini{display:grid;gap:12px;align-content:start;padding:20px 22px;color:var(--fg);transition:border-color var(--t-fast) var(--ease),transform var(--t-fast) var(--ease)}
+a.mini:hover{text-decoration:none;border-color:color-mix(in srgb,var(--accent) 45%,var(--line))}
+.mini-top{display:flex;justify-content:space-between;align-items:flex-start;gap:12px}
+.mini h3{font-size:17px}
+.mini p{font-size:14px;color:var(--muted)}
+.mini-foot{display:flex;justify-content:space-between;align-items:center;gap:10px;font-size:13px;color:var(--muted)}
+.mini-foot b{font:500 13px var(--font-mono);color:var(--fg)}
+.mini .big{font:600 28px/1 var(--font-display);letter-spacing:-.03em}
+.mini .big small{font:500 15px var(--font-display);color:var(--muted);letter-spacing:0;margin-left:2px}
+.soon{display:flex;gap:14px;align-items:flex-start;padding:20px 22px;border:1px dashed var(--line);border-radius:var(--r-lg);color:var(--muted)}
+.soon h3{font-size:16px;color:var(--fg);margin-bottom:4px}
+.soon p{font-size:14px}
+.soon-ic{flex:none;width:36px;height:36px;border-radius:11px;display:grid;place-items:center;background:var(--bg-tint);color:var(--muted)}
+.soon-ic .ic{width:18px;height:18px}
+
+/* ---------- Resumen ---------- */
 .hero{display:grid;grid-template-columns:auto minmax(0,1fr);gap:32px;align-items:center;padding:26px 30px}
 .ring-wrap{position:relative;width:136px;height:136px}
 .ring{width:100%;height:100%;transform:rotate(-90deg)}
@@ -100,7 +164,7 @@ input:checked ~ .ttext .tt{background-size:100% 1px;color:var(--muted)}
 .stat b{font:600 32px/1.05 var(--font-display);letter-spacing:-.03em;justify-self:start}
 .stat b small{font:500 15px var(--font-display);color:var(--muted);letter-spacing:0;margin-left:2px}
 .stat .sub{font-size:13px;color:var(--muted)}
-.stat .ok{color:var(--ok)}
+.stat .ok,.rc-stat .ok{color:var(--ok)}
 
 .wcard{padding:22px 22px 14px;display:grid;gap:14px}
 .wc-head{display:flex;justify-content:space-between;align-items:flex-start;gap:16px;padding:0 2px}
@@ -239,6 +303,53 @@ input:checked ~ .ttext .tt{background-size:100% 1px;color:var(--muted)}
 .empty .btn{margin-top:8px;text-decoration:none}
 .empty .btn .ic{width:16px;height:16px}
 
+/* ---------- Proyectos ---------- */
+.proj{padding:26px 28px;display:grid;gap:18px}
+.pj-head{display:flex;justify-content:space-between;gap:20px;align-items:flex-start}
+.pj-head h2{font-size:22px;margin-top:8px}
+.pj-pitch{color:var(--muted);margin-top:6px;max-width:62ch}
+.pj-pct{display:grid;justify-items:end;gap:8px;flex:none}
+.pj-pct b{font:600 28px/1 var(--font-display);letter-spacing:-.03em}
+.stack{display:flex;flex-wrap:wrap;gap:6px;list-style:none;margin:0;padding:0}
+.stack li{font:500 12px/1 var(--font-mono);color:var(--muted);background:var(--surface-2);border:1px solid var(--line);padding:6px 9px;border-radius:8px}
+.ms-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px 28px}
+.ms-grid.one{grid-template-columns:minmax(0,1fr)}
+.ms{display:grid;gap:6px;align-content:start;padding-top:14px;border-top:1px solid var(--line)}
+.ms-head{display:flex;align-items:center;flex-wrap:wrap;gap:6px 10px}
+.ms-when{font-size:13px;color:var(--muted)}
+.ms-count{margin-left:auto;font:500 13px var(--font-mono);color:var(--muted)}
+.ms.complete .ms-count{color:var(--ok)}
+.ms .tasks{margin:0 -10px}
+.pj-foot{display:flex;align-items:center;gap:8px;font-size:13.5px;color:var(--muted)}
+.pj-foot .ic{width:15px;height:15px}
+
+/* ---------- Vacantes ---------- */
+.job{display:grid;gap:28px}
+.job-card{padding:26px 28px;display:grid;gap:20px}
+.job-head{display:flex;justify-content:space-between;gap:16px 24px;align-items:flex-start;flex-wrap:wrap}
+.job-head h2{font-size:22px;margin-top:8px}
+.job-meta{display:flex;flex-wrap:wrap;gap:6px;margin-top:12px}
+.job-head .btn{text-decoration:none}
+.job-head .btn .ic{width:15px;height:15px}
+.note{display:flex;gap:10px;align-items:flex-start;padding:12px 14px;border-radius:12px;background:var(--bg-tint);font-size:14px;color:var(--muted)}
+.note .ic{width:16px;height:16px;margin-top:2px;color:var(--accent)}
+.cov{display:grid;gap:12px}
+.cov-top{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap}
+.cov-top b{font:600 34px/1 var(--font-display);letter-spacing:-.03em}
+.cov-top span{color:var(--muted)}
+.reqs{list-style:none;margin:0;padding:4px 22px}
+.req{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:6px 20px;padding:16px 0;border-bottom:1px solid var(--line)}
+.req:last-child{border-bottom:0}
+.req-body{display:grid;gap:4px;min-width:0}
+.req-t{font-weight:600}
+.req-how{font-size:14px;color:var(--muted)}
+.refs{display:flex;flex-wrap:wrap;gap:6px;margin-top:4px}
+.ref{font:500 12px/1 var(--font-mono);padding:6px 8px;border-radius:8px;background:var(--bg-tint);color:var(--muted)}
+a.ref:hover{color:var(--accent-strong);text-decoration:none}
+.req-side{display:grid;justify-items:end;gap:6px;align-content:start}
+.req-prog{font:500 12px var(--font-mono);color:var(--faint)}
+.nth{display:flex;flex-wrap:wrap;gap:6px}
+
 /* ---------- Toasts ---------- */
 .toasts{position:fixed;z-index:60;right:max(16px,env(safe-area-inset-right,0px));bottom:max(20px,env(safe-area-inset-bottom,0px));display:grid;gap:8px;justify-items:end;pointer-events:none;width:min(360px,calc(100vw - 32px))}
 @keyframes toast-in{from{opacity:0;transform:translateY(10px) scale(.98)}to{opacity:1;transform:none}}
@@ -256,6 +367,8 @@ input:checked ~ .ttext .tt{background-size:100% 1px;color:var(--muted)}
   .stat{padding:2px 14px;justify-items:center;text-align:center}
   .stat b{justify-self:center}
   .stat:first-child{border-left:0}
+  .home,.pminis{grid-template-columns:minmax(0,1fr)}
+  .ms-grid{grid-template-columns:minmax(0,1fr)}
 }
 @media (max-width:720px){
   .domains{grid-template-columns:repeat(2,minmax(0,1fr))}
@@ -265,7 +378,7 @@ input:checked ~ .ttext .tt{background-size:100% 1px;color:var(--muted)}
 @media (max-width:640px){
   /* backdrop-filter crearía un bloque contenedor y atraparía la barra fija de abajo */
   .topbar{backdrop-filter:none;-webkit-backdrop-filter:none;background:color-mix(in srgb,var(--bg) 96%,transparent)}
-  .topbar .shell{height:54px}
+  .bar1{height:54px}
   .logout-t{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
   .logout{margin-left:auto;padding:9px}
   .nav{position:fixed;z-index:40;left:0;right:0;bottom:0;margin:0;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:0;border-radius:0;background:color-mix(in srgb,var(--surface) 90%,transparent);backdrop-filter:saturate(1.4) blur(16px);-webkit-backdrop-filter:saturate(1.4) blur(16px);border-top:1px solid var(--line);padding:6px max(6px,env(safe-area-inset-right,0px)) calc(6px + env(safe-area-inset-bottom,0px)) max(6px,env(safe-area-inset-left,0px))}
@@ -274,7 +387,12 @@ input:checked ~ .ttext .tt{background-size:100% 1px;color:var(--muted)}
   .nav a .ic{width:20px;height:20px}
   .nav a[aria-current="page"]{color:var(--accent-strong)}
   .nav a[aria-current="page"] .ic-wrap{background:var(--accent-soft)}
-  .seg-ind{display:none}
+  .nav .seg-ind{display:none}
+  .sub-inner{height:auto;padding:8px 0 10px;gap:10px}
+  .trk.single{display:none}
+  .subnav{flex:1;min-width:0;overflow-x:auto;scrollbar-width:none;-webkit-overflow-scrolling:touch}
+  .subnav::-webkit-scrollbar{display:none}
+  .subnav a{flex:1 0 auto;padding:8px 12px}
   main{padding-top:26px;padding-bottom:calc(110px + env(safe-area-inset-bottom,0px))}
   .view{gap:34px}
   .toasts{left:max(16px,env(safe-area-inset-left,0px));right:max(16px,env(safe-area-inset-right,0px));width:auto;justify-items:stretch;bottom:calc(82px + env(safe-area-inset-bottom,0px))}
@@ -298,188 +416,90 @@ input:checked ~ .ttext .tt{background-size:100% 1px;color:var(--muted)}
   .hrow{grid-template-columns:minmax(0,1fr) auto 32px;gap:6px 12px}
   .hdate{grid-column:1/-1}
   .brow{grid-template-columns:60px minmax(0,1fr) 40px}
+  .hello{gap:16px}
+  .hello agent-eyes{width:56px;height:56px}
+  .rcard{padding:20px 18px 14px}
+  .rc-top{gap:18px}
+  .ring-wrap.sm{width:84px;height:84px}
+  .ring-wrap.sm .ring-center b{font-size:19px}
+  .ring-wrap.sm .ring-center span{display:none}
+  .rc-stats{gap:6px 20px}
+  .rc-next{flex-direction:column;align-items:stretch;gap:10px}
+  .mini{padding:18px}
+  .proj,.job-card{padding:20px 18px}
+  .pj-head{flex-direction:column;gap:12px}
+  .pj-pct{justify-items:start;grid-auto-flow:column;align-items:center;gap:12px}
+  .reqs{padding:2px 16px}
+  .req{grid-template-columns:minmax(0,1fr)}
+  .req-side{justify-items:start;grid-auto-flow:column;justify-content:start;align-items:center;gap:10px;grid-row:1}
 }
 </style>
+<script src="/data/lcae.js"></script>
+<script src="/data/tracks.js"></script>
+<script src="/data/projects.js"></script>
+<script src="/data/jobs.js"></script>
+<script src="/js/mascot.js" defer></script>
 </head>
 <body class="is-loading">
+<svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false">
+  <defs><linearGradient id="ring-grad" x1="0" y1="0" x2="1" y2="1"><stop offset="0" style="stop-color:var(--accent)"/><stop offset="1" style="stop-color:var(--build)"/></linearGradient></defs>
+</svg>
+
 <header class="topbar gutter">
-  <div class="shell">
-    <a class="brand" href="#hoy" aria-label="Ruta LCAE, ir a Hoy">
-      <span class="brand-mark"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 18c3.5 0 3.5-12 7-12s3.5 12 7 12"/></svg></span>
-      <span>Ruta LCAE</span>
+  <div class="shell bar1">
+    <a class="brand" href="#inicio" aria-label="AI Engineer, ir a Inicio">
+      <agent-eyes face size="30" aria-hidden="true"></agent-eyes>
+      <span>AI Engineer</span>
     </a>
-    <nav class="nav" id="nav" aria-label="Secciones">
-      <span class="seg-ind no-anim" id="seg-ind" aria-hidden="true"></span>
-      <a href="#hoy" data-v="hoy"><span class="ic-wrap" data-icon="sun"></span>Hoy</a>
-      <a href="#plan" data-v="plan"><span class="ic-wrap" data-icon="plan"></span>Plan</a>
-      <a href="#cursos" data-v="cursos"><span class="ic-wrap" data-icon="book"></span>Cursos</a>
-      <a href="#examenes" data-v="examenes"><span class="ic-wrap" data-icon="chart"></span>Exámenes</a>
+    <nav class="nav" id="nav" aria-label="Principal">
+      <span class="seg-ind no-anim" aria-hidden="true"></span>
+      <a href="#inicio" data-p="inicio"><span class="ic-wrap" data-icon="home"></span>Inicio</a>
+      <a href="#ruta" data-p="rutas"><span class="ic-wrap" data-icon="route"></span>Rutas</a>
+      <a href="#proyectos" data-p="proyectos"><span class="ic-wrap" data-icon="layers"></span>Proyectos</a>
+      <a href="#vacantes" data-p="vacantes"><span class="ic-wrap" data-icon="brief"></span>Vacantes</a>
     </nav>
     <button type="button" class="logout" id="logout"><span data-icon="logout"></span><span class="logout-t">Cerrar sesión</span></button>
+  </div>
+  <div class="subbar" id="subbar" hidden>
+    <div class="shell sub-inner">
+      <div class="trk" id="trk"></div>
+      <nav class="subnav" id="subnav" aria-label="Secciones de la ruta">
+        <span class="seg-ind no-anim" aria-hidden="true"></span>
+        <a data-s="resumen">Resumen</a>
+        <a data-s="plan">Plan</a>
+        <a data-s="cursos">Cursos</a>
+        <a data-s="examenes">Exámenes</a>
+      </nav>
+    </div>
   </div>
 </header>
 
 <main class="gutter">
   <div class="shell">
-
-  <!-- HOY -->
-  <section class="view" id="v-hoy" aria-labelledby="hoy-h" hidden>
-    <div class="vhead rv" style="--i:0">
-      <p class="label" id="today-label">&nbsp;</p>
-      <h1 id="hoy-h">Hola, Leo</h1>
-      <p class="sub"><span class="skl" id="greet-sub">Cargando tu semana…</span></p>
-    </div>
-
-    <div class="hero card rv" style="--i:1">
-      <div class="ring-wrap">
-        <svg class="ring" viewBox="0 0 120 120" aria-hidden="true">
-          <defs><linearGradient id="ring-grad" x1="0" y1="0" x2="1" y2="1"><stop offset="0" style="stop-color:var(--accent)"/><stop offset="1" style="stop-color:var(--build)"/></linearGradient></defs>
-          <circle class="ring-track" cx="60" cy="60" r="52"/>
-          <circle class="ring-val" id="ring-val" cx="60" cy="60" r="52" data-p="0"/>
-        </svg>
-        <div class="ring-center"><b class="num skl" id="pct">00%</b><span class="skl" id="pct-sub">0 de 00 tareas</span></div>
-      </div>
-      <div class="stats">
-        <div class="stat"><span class="label"><span data-icon="calendar"></span>Examen</span><b class="num skl" id="days">00</b><span class="sub">días · 11 dic</span></div>
-        <div class="stat"><span class="label"><span data-icon="flame"></span>Racha</span><b class="num skl" id="streak">0</b><span class="sub" id="streak-sub">días seguidos</span></div>
-        <div class="stat"><span class="label"><span data-icon="target"></span>Mejor</span><b class="num skl" id="best">00<small>/40</small></b><span class="sub">aprueba con 28</span></div>
-      </div>
-    </div>
-
-    <section class="block rv" style="--i:2" aria-labelledby="wk-h">
-      <div class="block-head"><h2 id="wk-h">Esta semana</h2><span class="label" id="wk-label"></span></div>
-      <div id="wk-card"></div>
-    </section>
-
-    <section class="block rv" style="--i:3" aria-labelledby="nx-h">
-      <div class="block-head"><h2 id="nx-h">Siguiente curso</h2></div>
-      <div id="next-course"><div class="sk-block" style="height:92px"></div></div>
-    </section>
-
-    <section class="block rv" style="--i:4" aria-labelledby="dm-h">
-      <div class="block-head"><h2 id="dm-h">Preparación por dominio</h2><span class="label">tareas del plan</span></div>
-      <div class="domains" id="domains"></div>
-    </section>
-  </section>
-
-  <!-- PLAN -->
-  <section class="view" id="v-plan" aria-labelledby="plan-h" hidden>
-    <div class="vhead rv" style="--i:0">
-      <p class="label">30 oct – 13 dic</p>
-      <h1 id="plan-h">Plan de 6 semanas</h1>
-      <p class="sub">Una semana a la vez. Abre cualquiera para ver sus tareas.</p>
-    </div>
-    <ol class="timeline rv" style="--i:1" id="timeline"></ol>
-  </section>
-
-  <!-- CURSOS -->
-  <section class="view" id="v-cursos" aria-labelledby="cur-h" hidden>
-    <div class="vhead rv" style="--i:0">
-      <p class="label">LangChain Academy</p>
-      <h1 id="cur-h">Cursos</h1>
-      <p class="sub">La ruta para el examen, en orden. Cada curso abre en otra pestaña.</p>
-    </div>
-    <div class="card croad rv" style="--i:1"><ol class="crows" id="courses" aria-label="Ruta de cursos"></ol></div>
-    <section class="extra-wrap rv" style="--i:2" aria-labelledby="ex-h">
-      <div class="block-head"><h2 id="ex-h">Para la vacante</h2><span class="label">después o en paralelo</span></div>
-      <ul class="crows extra" id="courses-extra"></ul>
-    </section>
-    <section class="block rv" style="--i:3" aria-labelledby="ln-h">
-      <div class="block-head"><h2 id="ln-h">Enlaces</h2></div>
-      <div class="links" id="links"></div>
-    </section>
-  </section>
-
-  <!-- EXÁMENES -->
-  <section class="view" id="v-examenes" aria-labelledby="exm-h" hidden>
-    <div class="vhead rv" style="--i:0">
-      <p class="label">Practice exams</p>
-      <h1 id="exm-h">Exámenes</h1>
-      <p class="sub">40 preguntas, 10 por sección. Apruebas con 28.</p>
-    </div>
-    <form class="card score-card rv" style="--i:1" id="score-form" novalidate aria-labelledby="sf-h">
-      <h2 id="sf-h" style="font-size:18px">Registrar intento</h2>
-      <div class="sf-fields">
-        <label class="field sfield" style="--c:var(--build)"><span><i class="dot"></i>Build</span><input class="input num" id="s-build" type="number" inputmode="numeric" min="0" max="10" step="1" placeholder="0–10" aria-describedby="s-err"></label>
-        <label class="field sfield" style="--c:var(--test)"><span><i class="dot"></i>Test</span><input class="input num" id="s-test" type="number" inputmode="numeric" min="0" max="10" step="1" placeholder="0–10" aria-describedby="s-err"></label>
-        <label class="field sfield" style="--c:var(--deploy)"><span><i class="dot"></i>Deploy</span><input class="input num" id="s-deploy" type="number" inputmode="numeric" min="0" max="10" step="1" placeholder="0–10" aria-describedby="s-err"></label>
-        <label class="field sfield" style="--c:var(--monitor)"><span><i class="dot"></i>Monitor</span><input class="input num" id="s-monitor" type="number" inputmode="numeric" min="0" max="10" step="1" placeholder="0–10" aria-describedby="s-err"></label>
-        <button type="submit" class="btn" id="s-save">Guardar</button>
-      </div>
-      <p class="ferr" id="s-err"></p>
-    </form>
-    <div class="rv" style="--i:2" id="scores"><div class="sk-block" style="height:260px"></div></div>
-  </section>
-
+    <section class="view" id="v-inicio" aria-labelledby="ini-h" hidden></section>
+    <section class="view" id="v-resumen" aria-labelledby="res-h" hidden></section>
+    <section class="view" id="v-plan" aria-labelledby="plan-h" hidden></section>
+    <section class="view" id="v-cursos" aria-labelledby="cur-h" hidden></section>
+    <section class="view" id="v-examenes" aria-labelledby="exm-h" hidden></section>
+    <section class="view" id="v-proyectos" aria-labelledby="pro-h" hidden></section>
+    <section class="view" id="v-vacantes" aria-labelledby="vac-h" hidden></section>
   </div>
 </main>
 
 <div class="toasts" id="toasts" role="status" aria-live="polite"></div>
 
 <script>
-const EXAM = new Date("2026-12-11T09:00:00");
-const WEEKS = [
-  {id:"w0", name:"Arranque", dom:"setup", from:"2026-10-30", to:"2026-11-01", tasks:[
-    ["setup-tools","Python 3.12, uv, Git, Docker"],["setup-ls","Cuenta y API key de LangSmith"],
-    ["setup-llm","API key de LLM con límite de US$20"],["enroll","Inscribirme a los 5 cursos"],
-    ["diag","Practice exam diagnóstico","examen"]]},
-  {id:"w1", name:"LangChain y create_agent", dom:"build", from:"2026-11-02", to:"2026-11-08", tasks:[
-    ["c1","Curso: Introduction to LangChain","curso"],["lg","Bases de LangGraph","extra"],
-    ["p1-ingest","DocuAgent: ingesta a pgvector","proyecto"],["p1-agent","DocuAgent: agente con citas","proyecto"],
-    ["p1-mw","Middleware propio","proyecto"],["n1","Notas de Build","notas"]]},
-  {id:"w2", name:"Deep Agents", dom:"build", from:"2026-11-09", to:"2026-11-15", tasks:[
-    ["c2","Curso: Introduction to Deep Agents","curso"],["p2-base","Job Hunter: deep agent con subagente","proyecto"],
-    ["p2-md","AGENTS.md y SKILL.md","proyecto"],["p2-try","Probarlo con la vacante de Nexaminds","proyecto"],
-    ["n2","Nota: create_agent vs deepagents","notas"]]},
-  {id:"w3", name:"Evals con LangSmith", dom:"test", from:"2026-11-16", to:"2026-11-22", tasks:[
-    ["c3","Curso: Building Reliable Agents","curso"],["p1-ds","Dataset golden de 30 a 50 preguntas","proyecto"],
-    ["p1-ev","Evaluadores: código y LLM-judge","proyecto"],["p1-align","Alinear el LLM-judge","proyecto"],
-    ["p1-exp","Comparar 2 experimentos","proyecto"],["p1-ci","Evals en GitHub Actions","proyecto"]]},
-  {id:"w4", name:"LangSmith Deployment", dom:"deploy", from:"2026-11-23", to:"2026-11-29", tasks:[
-    ["c4","Curso: Introduction to LangSmith Deployment","curso"],["p1-lg","langgraph.json y langgraph dev","proyecto"],
-    ["p1-dep","Desplegar DocuAgent","proyecto"],["p1-auth","Custom auth y authz por usuario","proyecto"],
-    ["p1-th","Threads y secretos","proyecto"],["msg-raul","Mandarle avance a Raúl","vacante"]]},
-  {id:"w5", name:"Monitoreo en producción", dom:"monitor", from:"2026-11-30", to:"2026-12-06", tasks:[
-    ["c5","Curso: Monitoring Production Agents","curso"],["p1-fb","Feedback de usuario","proyecto"],
-    ["p1-oe","Online evals","proyecto"],["p1-dash","Dashboard y una alerta","proyecto"],
-    ["post","Post técnico con métricas","portafolio"],["sched","Agendar el examen","examen"]]},
-  {id:"w6", name:"Repaso y examen", dom:"setup", from:"2026-12-07", to:"2026-12-13", tasks:[
-    ["pe2","Practice exam con 34/40 o más","examen"],["sim","Simulacro de 2 h sin IA","examen"],
-    ["exam","Presentar LCAE","examen"],["cv","CV actualizado y pedir referral","vacante"]]},
-];
-const ACAD = "https://academy.langchain.com/courses/";
-// [doneId, slug, name, domain, lessons, when, why]
-const COURSES = [
-  ["diag","lcae-practice-exam","LCAE Practice Exam (diagnóstico)","setup",5,"Sem 0","Para ver de dónde partes"],
-  ["c1","foundation-introduction-to-langchain-python","Introduction to LangChain – Python","build",30,"Sem 1","create_agent, tools, middleware"],
-  ["c2","foundation-introduction-to-deepagents","Introduction to Deep Agents","build",46,"Sem 2","deepagents, AGENTS.md, SKILL.md, sandbox"],
-  ["c3","building-reliable-agents","Building Reliable Agents with LangSmith","test",29,"Sem 3","Datasets, evaluadores, experimentos"],
-  ["c4","langsmith-deployment","Introduction to LangSmith Deployment","deploy",37,"Sem 4","Deployments, threads, auth"],
-  ["c5","production-monitoring","Monitoring Production Agents","monitor",37,"Sem 5","Traces, costos, alertas"],
-  ["pe2","lcae-practice-exam","LCAE Practice Exam (final)","setup",5,"Sem 6","Meta: 34/40 o más"],
-];
-const EXTRA = [
-  ["lg","intro-to-langgraph","Introduction to LangGraph – Python","build",55,"Sem 1–2","La vacante lo pide explícitamente"],
-  ["x-engine","langsmith-engine","Autonomous Agent Improvement with LangSmith Engine","test",12,"Sem 6","Repaso del ciclo completo"],
-  ["x-research","deep-research-with-langgraph","Project: Deep Research with LangGraph","build",null,"Después","Multi-agente, para el portafolio"],
-  ["x-ambient","ambient-agents","Project: Ambient Agents with LangGraph","build",null,"Después","Human-in-the-loop y evals"],
-  ["x-fleet","quickstart-agent-builder","LangSmith Fleet","deploy",null,"Después","Nice-to-have de la vacante"],
-];
-const LINKS = [
-  ["Cursos (bundle gratis)","https://academy.langchain.com/bundles/lcae-prerequisite-courses"],
-  ["Practice exam","https://academy.langchain.com/courses/lcae-practice-exam"],
-  ["docs.langchain.com","https://docs.langchain.com"],
-  ["LangSmith","https://smith.langchain.com"],
-  ["Página de la certificación","https://academy.langchain.com/pages/certifications-lcae"],
-  ["Agendar examen (Talview)","https://cx-v2.talview.com/login?driveScheduleId=114879&tid=3916&from=/scheduling/drive-registration"],
-  ["Repo AI-Engineer","https://github.com/leonardos4enz/AI-Engineer"],
-  ["Vacante Nexaminds","https://remotive.com/remote/jobs/artificial-intelligence/lang-chain-deployment-ai-engineer-5647177"],
-];
-const DOMAINS = [["build","Build"],["test","Test"],["deploy","Deploy"],["monitor","Monitor"]];
-const LABEL = {setup:"Preparación",build:"Build",test:"Test",deploy:"Deploy",monitor:"Monitor"};
+/* ---------- Datos (de /data/*.js) ---------- */
+const TRACKS = window.TRACKS || [];
+const PROJECTS = window.PROJECTS || [];
+const JOBS = window.JOBS || [];
+const SEC = ["build","test","deploy","monitor"];   // columnas de lcae_scores
 const MONTHS = ["ene","feb","mar","abr","may","jun","jul","ago","sep","oct","nov","dic"];
 const fmt = s => { const d = new Date(s+"T12:00:00"); return d.getDate()+" "+MONTHS[d.getMonth()]; };
-const PRACTICE = "https://academy.langchain.com/courses/lcae-practice-exam";
+
+/* Índice global de tareas: id -> {txt, kind, track, week} */
+const TASK = {};
+TRACKS.forEach(t=>t.weeks.forEach((w,i)=>w.tasks.forEach(([id,txt,kind])=>{ TASK[id] = {id, txt, kind, track:t.id, week:i}; })));
 
 /* ---------- Utilidades ---------- */
 const $ = id => document.getElementById(id);
@@ -490,17 +510,23 @@ const dayKey = d => keyFmt.format(d);
 const prevKey = k => { const d = new Date(k+"T12:00:00Z"); d.setUTCDate(d.getUTCDate()-1); return d.toISOString().slice(0,10); };
 const RM = matchMedia("(prefers-reduced-motion: reduce)");
 const RING_C = 2*Math.PI*52;
+const store = { get(k){ try{ return localStorage.getItem(k); }catch(e){ return null; } }, set(k,v){ try{ localStorage.setItem(k,v); }catch(e){} } };
 
 const ICON = {
-  sun:"M12 8a4 4 0 1 0 0 8 4 4 0 0 0 0-8zM12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41",
+  home:"M3 10.5L12 3l9 7.5V20a1 1 0 0 1-1 1h-5v-6h-6v6H4a1 1 0 0 1-1-1z",
+  route:"M6 19a2 2 0 1 0 0-4 2 2 0 0 0 0 4zM18 9a2 2 0 1 0 0-4 2 2 0 0 0 0 4zM8 17h7.5a3.5 3.5 0 0 0 0-7h-7a3.5 3.5 0 0 1 0-7H16",
+  layers:"M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5",
+  brief:"M4 7h16a1 1 0 0 1 1 1v11a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V8a1 1 0 0 1 1-1zM16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2M3 13h18",
   plan:"M9 6h11M9 12h11M9 18h11M4 6h.01M4 12h.01M4 18h.01",
-  book:"M4 19.5A2.5 2.5 0 0 1 6.5 17H20V3H6.5A2.5 2.5 0 0 0 4 5.5v14zM4 19.5A2.5 2.5 0 0 0 6.5 22H20v-5",
   chart:"M18 20V10M12 20V4M6 20v-6",
   logout:"M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9",
   ext:"M7 17L17 7M8 7h9v9",
+  arrow:"M5 12h14M13 6l6 6-6 6",
+  plus:"M12 5v14M5 12h14",
   check:"M5 12.5l4.5 4.5L19 7.5",
   chev:"M6 9l6 6 6-6",
   x:"M18 6L6 18M6 6l12 12",
+  code:"M16 18l6-6-6-6M8 6l-6 6 6 6",
   calendar:"M8 2v4M16 2v4M3 10h18M5 4h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2z",
   flame:"M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.07-2.14-.22-4.05 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.15.43-2.29 1-3a2.5 2.5 0 0 0 2.5 2.5z",
   target:"M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20zM12 6a6 6 0 1 0 0 12 6 6 0 0 0 0-12zM12 10a2 2 0 1 0 0 4 2 2 0 0 0 0-4z",
@@ -515,19 +541,28 @@ $$("[data-icon]").forEach(el=>{ el.innerHTML = icon(el.dataset.icon); el.style.d
 let done = {};      // taskId -> iso string (truthy = hecho)
 let attempts = [];  // [{id, at, build, test, deploy, monitor}]
 let pending = 0;    // escrituras en curso; el refresco no pisa cambios optimistas
-let loaded = false, lastData = "", view = null;
-const ALL = WEEKS.flatMap(w=>w.tasks.map(t=>t[0]));
-const WEEK_OF = {}; WEEKS.forEach((w,i)=>w.tasks.forEach(t=>{ WEEK_OF[t[0]] = i; }));
-const weekDone = i => WEEKS[i].tasks.filter(t=>done[t[0]]).length;
+let loaded = false, ready = false, lastData = "", view = null;
+let trackId = TRACKS.some(t=>t.id===store.get("aie-track")) ? store.get("aie-track") : (TRACKS[0]||{}).id;
+let builtTrack = null, lastSub = "resumen";
+const T = () => TRACKS.find(t=>t.id===trackId) || TRACKS[0];
 
-function currentWeek(){
+const ids = t => t.weeks.flatMap(w=>w.tasks.map(x=>x[0]));
+const prog = list => { const n = list.filter(id=>done[id]).length; return {n, t:list.length, p:list.length ? Math.round(n/list.length*100) : 0}; };
+const weekDone = (t,i) => t.weeks[i].tasks.filter(x=>done[x[0]]).length;
+const daysTo = t => t.examDate ? Math.max(0, Math.ceil((new Date(t.examDate+"T09:00:00") - new Date())/864e5)) : null;
+const dvars = d => `--c:var(--${d});--cs:var(--${d}-soft)`;
+
+function curWeek(t){
   const k = dayKey(new Date());
-  if(k < WEEKS[0].from) return 0;
-  const i = WEEKS.findIndex(w=>k>=w.from && k<=w.to);
-  return i < 0 ? WEEKS.length-1 : i;
+  if(k < t.weeks[0].from) return 0;
+  const i = t.weeks.findIndex(w=>k>=w.from && k<=w.to);
+  return i < 0 ? t.weeks.length-1 : i;
 }
-const CUR = currentWeek();
-
+/* Siguiente tarea: la primera pendiente, en orden del plan. */
+function nextTask(t){
+  for(let i=0;i<t.weeks.length;i++){ const x = t.weeks[i].tasks.find(k=>!done[k[0]]); if(x) return {task:x, week:i}; }
+  return null;
+}
 function streak(){
   const days = new Set(Object.values(done).filter(Boolean).map(v=>dayKey(new Date(v))));
   let k = dayKey(new Date());
@@ -536,48 +571,235 @@ function streak(){
   while(days.has(k)){ n++; k = prevKey(k); }
   return n;
 }
-
-/* ---------- Construcción ---------- */
-function taskItem([id,txt,kind], prefix){
-  return `<li><label class="task" for="${prefix}-${id}"><input type="checkbox" id="${prefix}-${id}" data-id="${id}" disabled>${BOX}<span class="ttext"><span class="tt">${txt}</span>${kind?`<span class="kind">${kind}</span>`:""}</span></label></li>`;
+const ST = {ok:"Cubierto", partial:"Parcial", gap:"Falta"};
+function reqState(r){
+  const pr = prog(r.tasks||[]);
+  if(r.status === "ok") return {s:"ok", pr};
+  if(pr.t && pr.n === pr.t) return {s: r.cover === "part" ? "partial" : "ok", pr};
+  if(r.status === "partial" || pr.n > 0) return {s:"partial", pr};
+  return {s:"gap", pr};
 }
-const dvars = d => `--c:var(--${d});--cs:var(--${d}-soft)`;
+const jobCount = j => { const c = {ok:0, partial:0, gap:0}; j.reqs.forEach(r=>c[reqState(r).s]++); return c; };
+const pStatus = (p, pr) => p.status || (pr.p === 100 ? "Listo" : pr.n > 0 ? "En curso" : "Por empezar");
 
-function build(){
-  const w = WEEKS[CUR];
-  $("wk-label").textContent = `Semana ${CUR} de ${WEEKS.length-1}`;
-  $("wk-card").innerHTML = `<article class="card wcard" data-week="${CUR}" style="${dvars(w.dom)}">
-    <header class="wc-head"><div><span class="chip">${LABEL[w.dom]}</span><h3>${w.name}</h3><p class="wc-dates">${fmt(w.from)} – ${fmt(w.to)}</p></div>
-      <span class="wc-count num skl" data-wcount="${CUR}">0/${w.tasks.length}</span></header>
-    <div class="bar"><i data-wbar="${CUR}" data-w="0"></i></div>
-    <ul class="tasks lg">${w.tasks.map(t=>taskItem(t,"h")).join("")}</ul></article>`;
+/* ---------- Plantillas ---------- */
+function taskItem([id,txt,kind], prefix){
+  return `<li><label class="task" for="${prefix}-${id}"><input type="checkbox" id="${prefix}-${id}" data-id="${id}"${done[id]?" checked":""}${ready?"":" disabled"}>${BOX}<span class="ttext"><span class="tt">${txt}</span>${kind?`<span class="kind">${kind}</span>`:""}</span></label></li>`;
+}
+const taskById = (id, prefix) => taskItem(TASK[id] ? [id, TASK[id].txt] : [id, id], prefix);
+const ring = (cls="") => `<div class="ring-wrap ${cls}">
+    <svg class="ring" viewBox="0 0 120 120" aria-hidden="true"><circle class="ring-track" cx="60" cy="60" r="52"/><circle class="ring-val" cx="60" cy="60" r="52" data-ring data-p="0"/></svg>
+    <div class="ring-center"><b class="num skl" data-k="pct">00%</b><span class="skl" data-k="pct-sub">0 de 00 tareas</span></div></div>`;
 
-  $("domains").innerHTML = DOMAINS.map(([k,l])=>`<div class="dom" style="${dvars(k)}">
-    <div class="dom-top"><span><i class="dot"></i>${l}</span><span class="dom-pct skl" data-dpct="${k}">0%</span></div>
-    <div class="bar"><i data-dbar="${k}" data-w="0"></i></div></div>`).join("");
+/* ---------- Inicio, Proyectos, Vacantes (se construyen una vez) ---------- */
+function buildHome(){
+  const t = T();
+  $("v-inicio").innerHTML = `
+    <div class="hello rv" style="--i:0">
+      <agent-eyes face follow size="72" id="home-agent" aria-hidden="true"></agent-eyes>
+      <div class="vhead"><p class="label" data-k="today">&nbsp;</p><h1 id="ini-h">Hola, Leo</h1>
+        <p class="sub"><span class="skl" data-k="hsub">Cargando tu avance…</span></p></div>
+    </div>
+    <div class="home">
+      <section class="card rcard span2 rv" style="--i:1" aria-labelledby="ra-h" id="rcard"></section>
+      <section class="block span2 rv" style="--i:2" aria-labelledby="pm-h">
+        <div class="block-head"><h2 id="pm-h">Proyectos</h2><a href="#proyectos">Ver todos${icon("arrow")}</a></div>
+        <div class="pminis">${PROJECTS.map(p=>`<a class="card mini" href="#proyectos" style="--c:var(--accent)">
+          <div class="mini-top"><div><p class="label">${p.role||"Proyecto"}</p><h3 style="margin-top:6px">${p.name}</h3></div><span class="chip skl" data-pstatus="${p.id}">Por empezar</span></div>
+          <p>${p.pitch}</p>
+          <div class="bar"><i data-pbar="${p.id}" data-w="0"></i></div>
+          <div class="mini-foot"><span>${p.milestones.length} ${p.milestones.length===1?"hito":"hitos"}</span><b class="skl" data-pcount="${p.id}">0/0 tareas</b></div></a>`).join("")}</div>
+      </section>
+      ${JOBS.slice(0,1).map(j=>`<a class="card mini rv" style="--i:3" href="#vacantes" aria-labelledby="vo-h">
+        <div class="mini-top"><div><p class="label">Vacante objetivo</p><h3 id="vo-h" style="margin-top:6px">${j.title}</h3></div></div>
+        <p>${j.company} · ${j.location}</p>
+        <div class="mini-top" style="align-items:baseline;justify-content:flex-start;gap:8px"><b class="big num skl" data-jok="${j.id}">0<small>/${j.reqs.length}</small></b><span class="muted" style="font-size:14px">requisitos cubiertos</span></div>
+        <div class="sbar" aria-hidden="true"><i class="st-ok" data-jbar="${j.id}-ok" data-w="0"></i><i class="st-partial" data-jbar="${j.id}-partial" data-w="0"></i><i class="st-gap" data-jbar="${j.id}-gap" data-w="0"></i></div>
+        <div class="mini-foot"><span class="skl" data-jsum="${j.id}">0 parciales · 0 faltan</span></div></a>`).join("")}
+      <div class="soon rv" style="--i:4">
+        <span class="soon-ic">${icon("plus")}</span>
+        <div><h3>Más rutas, después</h3><p>Cuando agregues otra ruta (por ejemplo ML o nube), aparecerá aquí con su avance.</p></div>
+      </div>
+    </div>`;
+  void t;
+}
 
-  $("timeline").innerHTML = WEEKS.map((w,i)=>`<li class="tl-item${i===CUR?" now open":""}" data-week="${i}" style="${dvars(w.dom)}">
-    <span class="tl-dot" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="${ICON.check}"/></svg></span>
-    <div class="tl-card">
-      <button type="button" class="tl-head" id="tlh-${i}" aria-expanded="${i===CUR}" aria-controls="tlp-${i}">
-        <span class="tl-main">
-          <span class="tl-meta"><span class="label">Semana ${i}</span><span class="tl-dates">${fmt(w.from)} – ${fmt(w.to)}</span>${i===CUR?'<span class="now-pill">Esta semana</span>':""}</span>
-          <span class="tl-title">${w.name}</span>
-        </span>
-        <span class="tl-right"><span class="chip">${LABEL[w.dom]}</span><span class="tl-count num skl" data-wcount="${i}">0/${w.tasks.length}</span><span class="bar"><i data-wbar="${i}" data-w="0"></i></span>${icon("chev","ic chev")}</span>
-      </button>
-      <div class="tl-panel" id="tlp-${i}" role="region" aria-labelledby="tlh-${i}"${i===CUR?"":" inert"}><div class="tl-inner"><ul class="tasks">${w.tasks.map(t=>taskItem(t,"p")).join("")}</ul></div></div>
-    </div></li>`).join("");
+function renderRouteCard(){
+  const t = T(), el = $("rcard");
+  if(!t){ el.innerHTML = `<p class="muted">Aún no hay rutas.</p>`; return; }
+  el.innerHTML = `<div class="rc-top">${ring("sm")}
+      <div class="rc-main">
+        <div class="rc-title"><p class="label">Ruta activa</p><h2 id="ra-h">${t.name}</h2></div>
+        <div class="rc-stats">
+          ${t.examDate?`<div class="rc-stat"><b class="num skl" data-k="days">00</b><span>días al examen</span></div>`:""}
+          <div class="rc-stat"><b class="num skl" data-k="streak">0</b><span data-k="streak-sub">días seguidos</span></div>
+          <div class="rc-stat"><b class="num skl" data-k="wk-count">0/0</b><span>esta semana</span></div>
+        </div>
+      </div></div>
+    <div class="rc-next"><div class="rc-next-body" id="home-next"><div class="sk-block" style="height:46px"></div></div>
+      <a class="btn" href="#ruta/${t.id}/resumen">Continuar${icon("arrow")}</a></div>`;
+  homeNextId = undefined;
+}
+
+let homeNextId, homeNextT;
+function renderHomeNext(){
+  const t = T(), box = $("home-next");
+  if(!t || !box) return;
+  const nx = nextTask(t), id = nx ? nx.task[0] : "";
+  if(id === homeNextId) return;
+  homeNextId = id;
+  box.innerHTML = nx
+    ? `<p class="label">Siguiente · Semana ${nx.week}</p><ul class="tasks lg" style="${dvars(t.weeks[nx.week].dom)}">${taskItem(nx.task,"i")}</ul>`
+    : `<p class="label">Siguiente</p><p class="muted">Ruta completa. Buen trabajo.</p>`;
+}
+
+function buildProjects(){
+  $("v-proyectos").innerHTML = `
+    <div class="vhead rv" style="--i:0"><p class="label">Portafolio</p><h1 id="pro-h">Proyectos</h1>
+      <p class="sub">Pocos y bien hechos. Su avance sale de las tareas de tus rutas.</p></div>
+    ${PROJECTS.map((p,pi)=>`<article class="card proj rv" style="--i:${pi+1}" aria-labelledby="pj-${p.id}">
+      <header class="pj-head">
+        <div><p class="label">${p.role||"Proyecto"}</p><h2 id="pj-${p.id}">${p.name}</h2><p class="pj-pitch">${p.pitch}</p></div>
+        <div class="pj-pct"><b class="num skl" data-ppct="${p.id}">0%</b><span class="chip skl" data-pstatus="${p.id}">Por empezar</span></div>
+      </header>
+      <div class="bar"><i data-pbar="${p.id}" data-w="0"></i></div>
+      <ul class="stack" aria-label="Stack">${p.stack.map(s=>`<li>${s}</li>`).join("")}</ul>
+      <div class="ms-grid${p.milestones.length===1?" one":""}">${p.milestones.map((m,mi)=>`<section class="ms" data-ms="${p.id}-${mi}" style="${dvars(m.dom||"accent")}" aria-label="${m.name}">
+        <div class="ms-head"><span class="chip">${m.name}</span><span class="ms-when">${m.when||""}</span><span class="ms-count num skl" data-mscount="${p.id}-${mi}">0/${m.tasks.length}</span></div>
+        <ul class="tasks">${m.tasks.map(id=>taskById(id,"j-"+p.id)).join("")}</ul></section>`).join("")}</div>
+      <p class="pj-foot">${icon("code")}${p.repo?`<a href="${p.repo}" target="_blank" rel="noopener">Repositorio</a>`:"Repo: aún no publicado"}</p>
+    </article>`).join("")}`;
+}
+
+function refLink(r){
+  if(r.project){ const p = PROJECTS.find(x=>x.id===r.project); return `<a class="ref" href="#proyectos">${p?p.name:r.project}</a>`; }
+  if(r.track){ const t = TRACKS.find(x=>x.id===r.track); return `<a class="ref" href="#ruta/${r.track}/plan">${t?t.short+" · ":""}Semana ${r.week}</a>`; }
+  return "";
+}
+function buildJobs(){
+  $("v-vacantes").innerHTML = `
+    <div class="vhead rv" style="--i:0"><p class="label">Hacia dónde vas</p><h1 id="vac-h">Vacantes</h1>
+      <p class="sub">Lo que piden y cómo lo vas cubriendo con tus rutas y proyectos.</p></div>
+    ${JOBS.map((j,ji)=>`<article class="job" aria-labelledby="jb-${j.id}">
+      <div class="card job-card rv" style="--i:${ji+1}">
+        <header class="job-head">
+          <div><p class="label">${j.company}</p><h2 id="jb-${j.id}">${j.title}</h2>
+            <div class="job-meta"><span class="chip">${j.location}</span>${j.type?`<span class="chip" style="${dvars("setup")}">${j.type}</span>`:""}</div></div>
+          ${j.url?`<a class="btn btn-ghost" href="${j.url}" target="_blank" rel="noopener">Ver vacante${icon("ext")}</a>`:""}
+        </header>
+        ${j.summary?`<p class="muted">${j.summary}</p>`:""}
+        ${j.note?`<p class="note">${icon("info")}<span>${j.note}</span></p>`:""}
+        <div class="cov">
+          <div class="cov-top"><b class="num skl" data-jok="${j.id}">0<small></small></b><span>de ${j.reqs.length} requisitos cubiertos</span></div>
+          <div class="sbar" aria-hidden="true"><i class="st-ok" data-jbar="${j.id}-ok" data-w="0"></i><i class="st-partial" data-jbar="${j.id}-partial" data-w="0"></i><i class="st-gap" data-jbar="${j.id}-gap" data-w="0"></i></div>
+          <div class="legend" style="margin-top:0"><span class="st-ok"><i class="dot"></i>Cubierto</span><span class="st-partial"><i class="dot"></i>Parcial</span><span class="st-gap"><i class="dot"></i>Falta</span></div>
+        </div>
+      </div>
+      <section class="block rv" style="--i:${ji+2}" aria-labelledby="rq-${j.id}">
+        <div class="block-head"><h2 id="rq-${j.id}">Requisitos</h2><span class="label">se actualiza con tu avance</span></div>
+        <ul class="card reqs">${j.reqs.map((r,ri)=>`<li class="req">
+          <div class="req-body"><span class="req-t">${r.text}</span><span class="req-how">${r.how||""}</span>
+            ${(r.refs||[]).length?`<span class="refs">${r.refs.map(refLink).join("")}</span>`:""}</div>
+          <div class="req-side"><span class="chip skl" data-rq="${j.id}-${ri}">Falta</span>${(r.tasks||[]).length?`<span class="req-prog num" data-rqp="${j.id}-${ri}">0/${r.tasks.length} tareas</span>`:""}</div></li>`).join("")}</ul>
+      </section>
+      ${(j.niceToHave||[]).length?`<section class="block rv" style="--i:${ji+3}" aria-labelledby="nh-${j.id}">
+        <div class="block-head"><h2 id="nh-${j.id}">Suman puntos</h2></div>
+        <div class="nth">${j.niceToHave.map(n=>`<span class="chip" style="${dvars("setup")}">${n}</span>`).join("")}</div></section>`:""}
+    </article>`).join("")}`;
+}
+
+/* ---------- Vistas de la ruta (se reconstruyen al cambiar de ruta) ---------- */
+function buildTrack(){
+  const t = T();
+  if(!t) return;
+  builtTrack = t.id;
+  const CUR = curWeek(t), w = t.weeks[CUR], L = t.labels || {};
+  const doms = t.domains || [];
+
+  $("v-resumen").innerHTML = `
+    <div class="vhead rv" style="--i:0"><p class="label">Ruta · ${t.short}</p><h1 id="res-h">${t.name}</h1>
+      <p class="sub"><span class="skl" data-k="wsub">Cargando tu semana…</span></p></div>
+    <div class="hero card rv" style="--i:1">${ring()}
+      <div class="stats">
+        ${t.examDate?`<div class="stat"><span class="label">${icon("calendar")}Examen</span><b class="num skl" data-k="days">00</b><span class="sub">días · ${fmt(t.examDate)}</span></div>`:""}
+        <div class="stat"><span class="label">${icon("flame")}Racha</span><b class="num skl" data-k="streak">0</b><span class="sub" data-k="streak-sub">días seguidos</span></div>
+        ${t.exam?`<div class="stat"><span class="label">${icon("target")}Mejor</span><b class="num skl" data-k="best">00<small>/${t.exam.total}</small></b><span class="sub">aprueba con ${t.exam.pass}</span></div>`:""}
+      </div>
+    </div>
+    <section class="block rv" style="--i:2" aria-labelledby="wk-h">
+      <div class="block-head"><h2 id="wk-h">Esta semana</h2><span class="label">Semana ${CUR} de ${t.weeks.length-1}</span></div>
+      <article class="card wcard" data-week="${CUR}" style="${dvars(w.dom)}">
+        <header class="wc-head"><div><span class="chip">${L[w.dom]||w.dom}</span><h3>${w.name}</h3><p class="wc-dates">${fmt(w.from)} – ${fmt(w.to)}</p></div>
+          <span class="wc-count num skl" data-wcount="${CUR}">0/${w.tasks.length}</span></header>
+        <div class="bar"><i data-wbar="${CUR}" data-w="0"></i></div>
+        <ul class="tasks lg">${w.tasks.map(x=>taskItem(x,"h")).join("")}</ul></article>
+    </section>
+    ${(t.courses||[]).length?`<section class="block rv" style="--i:3" aria-labelledby="nx-h">
+      <div class="block-head"><h2 id="nx-h">Siguiente curso</h2></div>
+      <div id="next-course"><div class="sk-block" style="height:92px"></div></div>
+    </section>`:""}
+    ${doms.length?`<section class="block rv" style="--i:4" aria-labelledby="dm-h">
+      <div class="block-head"><h2 id="dm-h">Preparación por dominio</h2><span class="label">tareas del plan</span></div>
+      <div class="domains">${doms.map(([k,l])=>`<div class="dom" style="${dvars(k)}">
+        <div class="dom-top"><span><i class="dot"></i>${l}</span><span class="dom-pct skl" data-dpct="${k}">0%</span></div>
+        <div class="bar"><i data-dbar="${k}" data-w="0"></i></div></div>`).join("")}</div>
+    </section>`:""}`;
+
+  $("v-plan").innerHTML = `
+    <div class="vhead rv" style="--i:0"><p class="label">${t.planLabel||""}</p><h1 id="plan-h">${t.planTitle||"Plan"}</h1>
+      <p class="sub">Una semana a la vez. Abre cualquiera para ver sus tareas.</p></div>
+    <ol class="timeline rv" style="--i:1" id="timeline">${t.weeks.map((w,i)=>`<li class="tl-item${i===CUR?" now open":""}" data-week="${i}" style="${dvars(w.dom)}">
+      <span class="tl-dot" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="${ICON.check}"/></svg></span>
+      <div class="tl-card">
+        <button type="button" class="tl-head" id="tlh-${i}" aria-expanded="${i===CUR}" aria-controls="tlp-${i}">
+          <span class="tl-main">
+            <span class="tl-meta"><span class="label">Semana ${i}</span><span class="tl-dates">${fmt(w.from)} – ${fmt(w.to)}</span>${i===CUR?'<span class="now-pill">Esta semana</span>':""}</span>
+            <span class="tl-title">${w.name}</span>
+          </span>
+          <span class="tl-right"><span class="chip">${L[w.dom]||w.dom}</span><span class="tl-count num skl" data-wcount="${i}">0/${w.tasks.length}</span><span class="bar"><i data-wbar="${i}" data-w="0"></i></span>${icon("chev","ic chev")}</span>
+        </button>
+        <div class="tl-panel" id="tlp-${i}" role="region" aria-labelledby="tlh-${i}"${i===CUR?"":" inert"}><div class="tl-inner"><ul class="tasks">${w.tasks.map(x=>taskItem(x,"p")).join("")}</ul></div></div>
+      </div></li>`).join("")}</ol>`;
 
   const row = ([id,slug,name,dom,les,when,why], n, prefix) => `<li class="crow" data-cid="${id}" style="${dvars(dom)}">
       <span class="cnum">${n}</span><i class="cdot dot"></i>
-      <div class="cmain"><a class="cname" href="${ACAD+slug}" target="_blank" rel="noopener"><span>${name}</span>${icon("ext")}</a>
+      <div class="cmain"><a class="cname" href="${(t.acad||"")+slug}" target="_blank" rel="noopener"><span>${name}</span>${icon("ext")}</a>
         <span class="cmeta"><span class="wk-m">${when} · </span>${les?les+" lecciones · ":""}${why}</span></div>
       <span class="cweek">${when}</span>
-      <label class="cchk"><input type="checkbox" id="${prefix}-${id}" data-id="${id}" disabled>${BOX}<span class="sr-only">${name}: completado</span></label></li>`;
-  $("courses").innerHTML = COURSES.map((c,i)=>row(c, String(i+1).padStart(2,"0"), "c")).join("");
-  $("courses-extra").innerHTML = EXTRA.map(c=>row(c, "·", "x")).join("");
-  $("links").innerHTML = LINKS.map(([t,u])=>`<a href="${u}" target="_blank" rel="noopener">${t}${icon("ext")}</a>`).join("");
+      <label class="cchk"><input type="checkbox" id="${prefix}-${id}" data-id="${id}"${done[id]?" checked":""}${ready?"":" disabled"}>${BOX}<span class="sr-only">${name}: completado</span></label></li>`;
+  $("v-cursos").innerHTML = `
+    <div class="vhead rv" style="--i:0"><p class="label">${t.coursesLabel||"Cursos"}</p><h1 id="cur-h">Cursos</h1>
+      <p class="sub">${t.coursesSub||""}</p></div>
+    <div class="card croad rv" style="--i:1"><ol class="crows" aria-label="Ruta de cursos">${(t.courses||[]).map((c,i)=>row(c, String(i+1).padStart(2,"0"), "c")).join("")}</ol></div>
+    ${(t.extra||[]).length?`<section class="extra-wrap rv" style="--i:2" aria-labelledby="ex-h">
+      <div class="block-head"><h2 id="ex-h">${t.extraTitle||"Extra"}</h2><span class="label">después o en paralelo</span></div>
+      <ul class="crows extra">${t.extra.map(c=>row(c, "·", "x")).join("")}</ul>
+    </section>`:""}
+    ${(t.links||[]).length?`<section class="block rv" style="--i:3" aria-labelledby="ln-h">
+      <div class="block-head"><h2 id="ln-h">Enlaces</h2></div>
+      <div class="links">${t.links.map(([x,u])=>`<a href="${u}" target="_blank" rel="noopener">${x}${icon("ext")}</a>`).join("")}</div>
+    </section>`:""}`;
+
+  const E = t.exam;
+  $("v-examenes").innerHTML = E ? `
+    <div class="vhead rv" style="--i:0"><p class="label">${E.label}</p><h1 id="exm-h">Exámenes</h1><p class="sub">${E.sub}</p></div>
+    <form class="card score-card rv" style="--i:1" id="score-form" novalidate aria-labelledby="sf-h">
+      <h2 id="sf-h" style="font-size:18px">Registrar intento</h2>
+      <div class="sf-fields">
+        ${doms.map(([k,l])=>`<label class="field sfield" style="--c:var(--${k})"><span><i class="dot"></i>${l}</span><input class="input num" id="s-${k}" type="number" inputmode="numeric" min="0" max="${E.per}" step="1" placeholder="0–${E.per}" aria-describedby="s-err"></label>`).join("")}
+        <button type="submit" class="btn" id="s-save">Guardar</button>
+      </div>
+      <p class="ferr" id="s-err"></p>
+    </form>
+    <div class="rv" style="--i:2" id="scores"><div class="sk-block" style="height:260px"></div></div>` : "";
+
+  $$("#subnav a").forEach(a=>{ a.href = `#ruta/${t.id}/${a.dataset.s}`; if(a.dataset.s === "examenes") a.hidden = !E; });
+  $("trk").className = "trk" + (TRACKS.length > 1 ? "" : " single");
+  $("trk").innerHTML = TRACKS.length > 1
+    ? `<label class="label" for="trk-sel">Ruta</label><select class="trk-sel" id="trk-sel">${TRACKS.map(x=>`<option value="${x.id}"${x.id===t.id?" selected":""}>${x.name}</option>`).join("")}</select>`
+    : `<span class="label">Ruta</span><b>${t.name}</b>`;
+  lastNext = undefined;
+  if(ready) renderScores();
 }
 
 /* ---------- Actualización ---------- */
@@ -588,73 +810,109 @@ function countUp(el, to, html=""){
     el.innerHTML = Math.round(to*e)+html; if(k<1) requestAnimationFrame(step); };
   requestAnimationFrame(step);
 }
+const setNum = (k, v, html="") => $$(`[data-k="${k}"]`).forEach(el=>countUp(el, v, html));
+const setText = (k, v) => $$(`[data-k="${k}"]`).forEach(el=>{ el.textContent = v; });
 
 function greeting(){
   const h = +new Intl.DateTimeFormat("en-US",{hour:"numeric",hourCycle:"h23",timeZone:TZ}).format(new Date());
   const g = h < 12 ? "Buenos días" : h < 19 ? "Buenas tardes" : "Buenas noches";
-  $("hoy-h").textContent = g+", Leo";
-  const d = new Intl.DateTimeFormat("es-MX",{weekday:"long",day:"numeric",month:"long",timeZone:TZ}).format(new Date());
-  $("today-label").textContent = d;
+  const el = $("ini-h"); if(el) el.textContent = g+", Leo";
+  setText("today", new Intl.DateTimeFormat("es-MX",{weekday:"long",day:"numeric",month:"long",timeZone:TZ}).format(new Date()));
 }
 
-let lastNext = null;
-function renderNext(){
-  const i = COURSES.findIndex(c=>!done[c[0]]);
+let lastNext;
+function renderNext(t){
+  const el = $("next-course");
+  if(!el) return;
+  const C = t.courses || [];
+  const i = C.findIndex(c=>!done[c[0]]);
   if(i === lastNext) return;
   lastNext = i;
-  const el = $("next-course");
   if(i < 0){ el.innerHTML = `<p class="next-empty">Terminaste la ruta de cursos. Repasa con el practice exam.</p>`; return; }
-  const [,slug,name,dom,les,when,why] = COURSES[i];
+  const [,slug,name,dom,les,when,why] = C[i];
   el.innerHTML = `<div class="next" style="${dvars(dom)}">
-    <div class="next-body"><p class="label">Curso ${i+1} de ${COURSES.length} · ${when}</p><h3>${name}</h3>
+    <div class="next-body"><p class="label">Curso ${i+1} de ${C.length} · ${when}</p><h3>${name}</h3>
       <p class="next-meta">${les?les+" lecciones · ":""}${why}</p></div>
-    <a class="btn" href="${ACAD+slug}" target="_blank" rel="noopener">Abrir curso${icon("ext")}</a></div>`;
+    <a class="btn" href="${(t.acad||"")+slug}" target="_blank" rel="noopener">Abrir curso${icon("ext")}</a></div>`;
 }
 
 function update(){
-  const n = ALL.filter(id=>done[id]).length;
-  const pct = Math.round(n/ALL.length*100);
-  countUp($("pct"), pct, "%");
-  $("pct-sub").textContent = `${n} de ${ALL.length} tareas`;
-  $("ring-val").dataset.p = pct;
-  countUp($("days"), Math.max(0, Math.ceil((EXAM - new Date())/864e5)));
-  const s = streak();
-  countUp($("streak"), s);
-  $("streak-sub").textContent = s === 1 ? "día seguido" : "días seguidos";
-  const best = attempts.reduce((m,a)=>Math.max(m,a.build+a.test+a.deploy+a.monitor), -1);
-  const bestEl = $("best");
-  if(best < 0) bestEl.innerHTML = "–<small>/40</small>"; else countUp(bestEl, best, "<small>/40</small>");
-  bestEl.classList.toggle("ok", best >= 28);
+  const t = T();
+  if(t){
+    const st = prog(ids(t)), CUR = curWeek(t);
+    setNum("pct", st.p, "%");
+    setText("pct-sub", `${st.n} de ${st.t} tareas`);
+    $$("[data-ring]").forEach(r=>{ r.dataset.p = st.p; });
+    const d = daysTo(t); if(d != null) setNum("days", d);
+    const s = streak();
+    setNum("streak", s);
+    setText("streak-sub", s === 1 ? "día seguido" : "días seguidos");
+    if(t.exam){
+      const best = attempts.reduce((m,a)=>Math.max(m,total(a)), -1);
+      $$('[data-k="best"]').forEach(el=>{
+        if(best < 0) el.innerHTML = `–<small>/${t.exam.total}</small>`; else countUp(el, best, `<small>/${t.exam.total}</small>`);
+        el.classList.toggle("ok", best >= t.exam.pass);
+      });
+    }
+    t.weeks.forEach((w,i)=>{
+      const c = weekDone(t,i), n = w.tasks.length;
+      $$(`[data-wcount="${i}"]`).forEach(el=>{ el.textContent = `${c}/${n}`; });
+      $$(`[data-wbar="${i}"]`).forEach(el=>{ el.dataset.w = Math.round(c/n*100); });
+      $$(`[data-week="${i}"]`).forEach(el=>el.classList.toggle("complete", c===n));
+    });
+    const wc = weekDone(t,CUR), left = t.weeks[CUR].tasks.length - wc;
+    setText("wk-count", `${wc}/${t.weeks[CUR].tasks.length}`);
+    const leftTxt = left === 0 ? "Semana completa. Buen ritmo, sigue así."
+      : left === 1 ? "Te queda 1 tarea esta semana." : `Te quedan ${left} tareas esta semana.`;
+    setText("wsub", leftTxt);
+    setText("hsub", `Llevas ${st.p}% de la ruta ${t.short}. ${leftTxt}`);
+    (t.domains||[]).forEach(([k])=>{
+      const p = prog(t.weeks.filter(w=>w.dom===k).flatMap(w=>w.tasks.map(x=>x[0]))).p;
+      $$(`[data-dpct="${k}"]`).forEach(el=>{ el.textContent = p+"%"; });
+      $$(`[data-dbar="${k}"]`).forEach(el=>{ el.dataset.w = p; });
+    });
+    $$(".crow").forEach(r=>r.classList.toggle("is-done", !!done[r.dataset.cid]));
+    renderNext(t);
+    clearTimeout(homeNextT);
+    if(homeNextId === undefined || !loaded) renderHomeNext();
+    else homeNextT = setTimeout(renderHomeNext, 700);   // deja ver la palomita antes de pasar a la siguiente
+  }
 
-  WEEKS.forEach((w,i)=>{
-    const c = weekDone(i), t = w.tasks.length;
-    $$(`[data-wcount="${i}"]`).forEach(el=>{ el.textContent = `${c}/${t}`; });
-    $$(`[data-wbar="${i}"]`).forEach(el=>{ el.dataset.w = Math.round(c/t*100); });
-    $$(`[data-week="${i}"]`).forEach(el=>el.classList.toggle("complete", c===t));
+  PROJECTS.forEach(p=>{
+    const pr = prog(p.milestones.flatMap(m=>m.tasks));
+    $$(`[data-ppct="${p.id}"]`).forEach(el=>{ el.textContent = pr.p+"%"; });
+    $$(`[data-pbar="${p.id}"]`).forEach(el=>{ el.dataset.w = pr.p; });
+    $$(`[data-pcount="${p.id}"]`).forEach(el=>{ el.textContent = `${pr.n}/${pr.t} tareas`; });
+    const s = pStatus(p, pr), dom = pr.p === 100 ? "deploy" : pr.n > 0 ? "accent" : "setup";
+    $$(`[data-pstatus="${p.id}"]`).forEach(el=>{ el.textContent = s; el.style.cssText = dom === "accent" ? "" : dvars(dom); });
+    p.milestones.forEach((m,mi)=>{
+      const c = prog(m.tasks);
+      $$(`[data-mscount="${p.id}-${mi}"]`).forEach(el=>{ el.textContent = `${c.n}/${c.t}`; });
+      $$(`[data-ms="${p.id}-${mi}"]`).forEach(el=>el.classList.toggle("complete", c.n === c.t));
+    });
   });
-  const left = WEEKS[CUR].tasks.length - weekDone(CUR);
-  $("greet-sub").textContent = left === 0 ? "Semana completa. Buen ritmo, sigue así."
-    : left === 1 ? "Te queda 1 tarea esta semana." : `Te quedan ${left} tareas esta semana.`;
 
-  DOMAINS.forEach(([k])=>{
-    const ids = WEEKS.filter(w=>w.dom===k).flatMap(w=>w.tasks.map(t=>t[0]));
-    const p = Math.round(ids.filter(i=>done[i]).length/ids.length*100);
-    $$(`[data-dpct="${k}"]`).forEach(el=>{ el.textContent = p+"%"; });
-    $$(`[data-dbar="${k}"]`).forEach(el=>{ el.dataset.w = p; });
+  JOBS.forEach(j=>{
+    const c = jobCount(j), n = j.reqs.length;
+    $$(`[data-jok="${j.id}"]`).forEach(el=>{ el.innerHTML = `${c.ok}<small>/${n}</small>`; });
+    ["ok","partial","gap"].forEach(k=>$$(`[data-jbar="${j.id}-${k}"]`).forEach(el=>{ el.dataset.w = c[k]/n*100; }));
+    $$(`[data-jsum="${j.id}"]`).forEach(el=>{ el.textContent = `${c.partial} ${c.partial===1?"parcial":"parciales"} · ${c.gap} ${c.gap===1?"falta":"faltan"}`; });
+    j.reqs.forEach((r,ri)=>{
+      const rs = reqState(r);
+      $$(`[data-rq="${j.id}-${ri}"]`).forEach(el=>{ el.textContent = ST[rs.s]; el.className = "chip st-"+rs.s; });
+      $$(`[data-rqp="${j.id}-${ri}"]`).forEach(el=>{ el.textContent = `${rs.pr.n}/${rs.pr.t} tareas`; });
+    });
   });
-  $$(".crow").forEach(r=>r.classList.toggle("is-done", !!done[r.dataset.cid]));
-  renderNext();
   paint();
 }
 
-/* Barras y anillo: se pintan solo en la vista visible, así animan desde 0 al entrar. */
+/* Barras y anillos: se pintan solo en la vista visible, así animan desde 0 al entrar. */
 function paint(){
   const root = view && $("v-"+view);
   if(!root) return;
   requestAnimationFrame(()=>requestAnimationFrame(()=>{
-    $$("[data-w]", root).forEach(el=>{ el.style.width = el.dataset.w+"%"; });
-    const ring = root.querySelector("#ring-val");
-    if(ring) ring.style.strokeDashoffset = RING_C*(1 - (+ring.dataset.p||0)/100);
+    $$("[data-w]", root).forEach(el=>{ el.style.width = `calc(${el.dataset.w}% - ${el.closest(".sbar") && +el.dataset.w ? 2 : 0}px)`; });
+    $$("[data-ring]", root).forEach(r=>{ r.style.strokeDashoffset = RING_C*(1 - (+r.dataset.p||0)/100); });
   }));
 }
 
@@ -665,37 +923,39 @@ function syncChecks(){
 }
 
 /* ---------- Exámenes ---------- */
-const total = a => a.build+a.test+a.deploy+a.monitor;
+const total = a => SEC.reduce((s,k)=>s+a[k], 0);
 
 function renderScores(){
-  const box = $("scores");
+  const t = T(), box = $("scores");
+  if(!box || !t.exam) return;
+  const E = t.exam, doms = t.domains;
   if(!attempts.length){
     box.innerHTML = `<div class="empty">
       <span class="empty-ic">${icon("target")}</span>
       <h2>Aún no hay intentos</h2>
       <p>Haz el practice exam diagnóstico para ver de dónde partes. Luego registra aquí tu puntaje.</p>
-      <a class="btn" href="${PRACTICE}" target="_blank" rel="noopener">Hacer el diagnóstico${icon("ext")}</a></div>`;
+      <a class="btn" href="${E.practice}" target="_blank" rel="noopener">Hacer el diagnóstico${icon("ext")}</a></div>`;
     return;
   }
   const last = attempts[attempts.length-1];
   box.innerHTML = `<div class="ex-grid">
     <section class="block" aria-labelledby="ch-h">
-      <div class="block-head"><h2 id="ch-h">Intentos</h2><span class="label">total / 40</span></div>
+      <div class="block-head"><h2 id="ch-h">Intentos</h2><span class="label">total / ${E.total}</span></div>
       <div><div class="chart" id="chart"></div>
-      <div class="legend">${DOMAINS.map(([k,l])=>`<span style="--c:var(--${k})"><i class="dot"></i>${l}</span>`).join("")}<span><i class="dash"></i>28 aprueba</span></div></div>
+      <div class="legend">${doms.map(([k,l])=>`<span style="--c:var(--${k})"><i class="dot"></i>${l}</span>`).join("")}<span><i class="dash"></i>${E.pass} aprueba</span></div></div>
     </section>
     <section class="block" aria-labelledby="lt-h">
       <div class="block-head"><h2 id="lt-h">Último intento</h2><span class="label">${fmt(last.at)}</span></div>
-      <ul class="brows">${DOMAINS.map(([k,l])=>`<li class="brow" style="${dvars(k)}"><span>${l}</span><div class="bar" aria-hidden="true"><i data-w="${last[k]*10}"></i></div><span class="bval num">${last[k]}/10</span></li>`).join("")}</ul>
+      <ul class="brows">${doms.map(([k,l])=>`<li class="brow" style="${dvars(k)}"><span>${l}</span><div class="bar" aria-hidden="true"><i data-w="${last[k]*10}"></i></div><span class="bval num">${last[k]}/${E.per}</span></li>`).join("")}</ul>
       <p class="hint">La marca indica 7/10, el ritmo para aprobar.</p>
     </section></div>
     <section class="block" aria-labelledby="hs-h" style="margin-top:40px">
       <div class="block-head"><h2 id="hs-h">Historial</h2><span class="label">${attempts.length} ${attempts.length===1?"intento":"intentos"}</span></div>
       <ul class="hist">${attempts.slice().reverse().map(a=>{
-        const t = total(a), tmp = String(a.id).startsWith("tmp-");
+        const s = total(a), tmp = String(a.id).startsWith("tmp-");
         return `<li class="hrow"><span class="hdate">${fmt(a.at)}</span>
-          <span class="hparts">${DOMAINS.map(([k,l])=>`<span style="--c:var(--${k})"><i class="dot"></i><span class="sr-only">${l}</span>${a[k]}</span>`).join("")}</span>
-          <span class="htot num${t>=28?" pass":""}">${t}/40</span>
+          <span class="hparts">${doms.map(([k,l])=>`<span style="--c:var(--${k})"><i class="dot"></i><span class="sr-only">${l}</span>${a[k]}</span>`).join("")}</span>
+          <span class="htot num${s>=E.pass?" pass":""}">${s}/${E.total}</span>
           ${tmp?"<span></span>":`<button type="button" class="del" data-del="${a.id}" aria-label="Borrar intento del ${fmt(a.at)}" title="Borrar">${icon("x")}</button>`}</li>`;
       }).join("")}</ul>
     </section>`;
@@ -708,26 +968,27 @@ function drawChart(animate){
   if(!el) return;
   const W = el.clientWidth;
   if(!W) return;
+  const E = T().exam, doms = T().domains;
   const H = 210, pt = 24, pb = 28, pl = 30, pr = 8, iw = W-pl-pr, ih = H-pt-pb, n = attempts.length;
   const slot = iw/n, bw = Math.max(10, Math.min(40, slot*.5));
-  const y = v => pt + ih - v/40*ih;
+  const y = v => pt + ih - v/E.total*ih;
   const every = Math.max(1, Math.ceil(n / Math.max(1, Math.floor(iw/52))));
-  let s = `<svg width="${W}" height="${H}" viewBox="0 0 ${W} ${H}" role="img" aria-label="Puntaje total por intento: ${attempts.map(a=>fmt(a.at)+" "+total(a)+" de 40").join(", ")}">`;
+  let s = `<svg width="${W}" height="${H}" viewBox="0 0 ${W} ${H}" role="img" aria-label="Puntaje total por intento: ${attempts.map(a=>fmt(a.at)+" "+total(a)+" de "+E.total).join(", ")}">`;
   [0,10,20,40].forEach(v=>{ s += `<line class="grid" x1="${pl}" x2="${W-pr}" y1="${y(v)}" y2="${y(v)}"/><text class="ax" x="${pl-8}" y="${y(v)+4}" text-anchor="end">${v}</text>`; });
-  s += `<line class="pass" x1="${pl}" x2="${W-pr}" y1="${y(28)}" y2="${y(28)}"/><text class="ax pass-t" x="${pl-8}" y="${y(28)+4}" text-anchor="end">28</text>`;
+  s += `<line class="pass" x1="${pl}" x2="${W-pr}" y1="${y(E.pass)}" y2="${y(E.pass)}"/><text class="ax pass-t" x="${pl-8}" y="${y(E.pass)+4}" text-anchor="end">${E.pass}</text>`;
   attempts.forEach((a,i)=>{
     const cx = pl + slot*i + slot/2, x = cx - bw/2;
     let acc = 0;
     s += `<g class="${animate?"grow":""}" style="--d:${i*60}ms">`;
-    DOMAINS.forEach(([k])=>{ const v = a[k]; if(!v) return;
-      s += `<rect x="${x}" y="${y(acc+v)}" width="${bw}" height="${v/40*ih}" rx="3" style="fill:var(--${k})"/>`; acc += v; });
-    s += `</g><text class="tot${acc>=28?" ok":""}${animate?" fade":""}" style="--d:${i*60}ms" x="${cx}" y="${y(acc)-8}" text-anchor="middle">${acc}</text>`;
+    doms.forEach(([k])=>{ const v = a[k]; if(!v) return;
+      s += `<rect x="${x}" y="${y(acc+v)}" width="${bw}" height="${v/E.total*ih}" rx="3" style="fill:var(--${k})"/>`; acc += v; });
+    s += `</g><text class="tot${acc>=E.pass?" ok":""}${animate?" fade":""}" style="--d:${i*60}ms" x="${cx}" y="${y(acc)-8}" text-anchor="middle">${acc}</text>`;
     if(i % every === 0 || i === n-1) s += `<text class="dt" x="${cx}" y="${H-8}" text-anchor="middle">${fmt(a.at)}</text>`;
   });
   el.innerHTML = s + `</svg>`;
 }
 let rz;
-addEventListener("resize", ()=>{ clearTimeout(rz); rz = setTimeout(()=>{ if(view==="examenes") drawChart(false); placeInd(false); }, 120); });
+addEventListener("resize", ()=>{ clearTimeout(rz); rz = setTimeout(()=>{ if(view==="examenes") drawChart(false); placeInds(false); }, 120); });
 
 /* ---------- API ---------- */
 class HttpError extends Error{ constructor(status, msg){ super(msg); this.status = status; } }
@@ -748,12 +1009,33 @@ async function api(method, url, body){
 function toast(msg, kind="info"){
   const t = document.createElement("div");
   t.className = "toast "+kind;
-  t.innerHTML = icon(kind==="ok"?"okc":kind==="error"?"info":"info")+`<span></span>`;
+  t.innerHTML = icon(kind==="ok"?"okc":"info")+`<span></span>`;
   t.lastChild.textContent = msg;
   $("toasts").appendChild(t);
   setTimeout(()=>{ t.classList.add("out"); setTimeout(()=>t.remove(), 400); }, kind==="error"?5000:3200);
 }
 const fail = (err, msg) => { if(err.status !== 401) toast(err.status === 0 ? "Sin conexión. Intenta de nuevo." : msg, "error"); };
+
+/* ---------- El agente: se alegra al completar, se duerme sin actividad ---------- */
+const agents = () => $$("agent-eyes");
+const SLEEP_MS = 120000;
+let asleep = false, idleT = 0, lastAct = 0;
+function sleepNow(){ asleep = true; agents().forEach(a=>a.setAttribute("mood","sleep")); }
+function wake(){
+  const now = Date.now();
+  if(asleep){ asleep = false; agents().forEach(a=>a.setAttribute("mood","idle")); }
+  else if(now - lastAct < 1000) return;   // no reiniciar el reloj en cada pixel
+  lastAct = now;
+  clearTimeout(idleT);
+  idleT = setTimeout(sleepNow, SLEEP_MS);
+}
+["pointerdown","pointermove","keydown","wheel","touchstart","scroll"].forEach(ev=>addEventListener(ev, wake, {passive:true}));
+wake();
+/* Cualquier parte de la app puede avisar: document.dispatchEvent(new CustomEvent("aie:task-done", {detail:{id}})) */
+document.addEventListener("aie:task-done", ()=>{
+  wake();
+  agents().forEach(a=>{ if(typeof a.react === "function") a.react("happy", 1400); });
+});
 
 /* ---------- Carga y refresco ---------- */
 async function loadProgress(){
@@ -765,6 +1047,7 @@ async function loadProgress(){
   done = data.done || {};
   attempts = (data.scores || []).map(s=>({id:s.id, at:String(s.at).slice(0,10),
     build:+s.build, test:+s.test, deploy:+s.deploy, monitor:+s.monitor}));
+  ready = true;
   syncChecks();
   update();
   renderScores();
@@ -785,14 +1068,19 @@ function celebrate(i){
 
 document.addEventListener("change", async e=>{
   const inp = e.target;
+  if(inp.id === "trk-sel"){ location.hash = `#ruta/${inp.value}/${lastSub}`; return; }
   if(!inp.matches("input[data-id]")) return;
   const id = inp.dataset.id, val = inp.checked, prev = done[id];
-  const wi = WEEK_OF[id], before = wi != null ? weekDone(wi) : 0;
+  const info = TASK[id], t = info && TRACKS.find(x=>x.id===info.track);
+  const wi = info ? info.week : null, before = t ? weekDone(t,wi) : 0;
   if(val) done[id] = new Date().toISOString(); else delete done[id];
   $$(`input[data-id="${id}"]`).forEach(i=>{ i.checked = val; });
-  if(val){ const b = inp.nextElementSibling; b.classList.remove("pop"); void b.offsetWidth; b.classList.add("pop"); }
+  if(val){ const b = inp.nextElementSibling; b.classList.remove("pop"); void b.offsetWidth; b.classList.add("pop");
+    document.dispatchEvent(new CustomEvent("aie:task-done", {detail:{id}})); }
   update();
-  if(val && wi != null && before < WEEKS[wi].tasks.length && weekDone(wi) === WEEKS[wi].tasks.length) celebrate(wi);
+  if(val && t && before < t.weeks[wi].tasks.length && weekDone(t,wi) === t.weeks[wi].tasks.length){
+    if(t.id === builtTrack) celebrate(wi); else toast(`Semana ${wi} completa. Bien hecho.`, "ok");
+  }
   pending++;
   try{ await api("PUT", "/api/done/"+encodeURIComponent(id), {done:val}); lastData = ""; }
   catch(err){
@@ -804,7 +1092,7 @@ document.addEventListener("change", async e=>{
 });
 
 /* Acordeón del plan */
-$("timeline").addEventListener("click", e=>{
+document.addEventListener("click", e=>{
   const head = e.target.closest(".tl-head");
   if(!head) return;
   const item = head.closest(".tl-item"), open = !item.classList.contains("open");
@@ -815,25 +1103,27 @@ $("timeline").addEventListener("click", e=>{
 });
 
 /* Formulario de puntajes */
-const SF = DOMAINS.map(([k])=>k);
 function validate(showEmpty){
+  const per = T().exam.per;
   let msg = "";
-  SF.forEach(k=>{
+  SEC.forEach(k=>{
     const inp = $("s-"+k), v = inp.value.trim();
     let bad = false;
     if(v === ""){ if(showEmpty){ bad = true; msg = msg || "Completa las 4 secciones."; } }
-    else if(!/^\d+$/.test(v) || +v > 10){ bad = true; msg = "Usa números enteros del 0 al 10."; }
+    else if(!/^\d+$/.test(v) || +v > per){ bad = true; msg = `Usa números enteros del 0 al ${per}.`; }
     inp.setAttribute("aria-invalid", bad);
   });
   $("s-err").textContent = msg;
   return !msg;
 }
-SF.forEach(k=>$("s-"+k).addEventListener("input", ()=>validate(false)));
+document.addEventListener("input", e=>{ if(e.target.closest("#score-form")) validate(false); });
 
-$("score-form").addEventListener("submit", async e=>{
+document.addEventListener("submit", async e=>{
+  if(e.target.id !== "score-form") return;
   e.preventDefault();
+  const form = e.target;
   if(!validate(true)){ $$('#score-form [aria-invalid="true"]')[0]?.focus(); return; }
-  const body = {}; SF.forEach(k=>{ body[k] = +$("s-"+k).value; });
+  const body = {}; SEC.forEach(k=>{ body[k] = +$("s-"+k).value; });
   const tmp = {id:"tmp-"+Date.now(), at:dayKey(new Date()), ...body};
   attempts = [...attempts, tmp];
   renderScores(); update();
@@ -844,19 +1134,19 @@ $("score-form").addEventListener("submit", async e=>{
     attempts = attempts.map(a=>a===tmp ? {id:row.id, at:String(row.at).slice(0,10),
       build:+row.build, test:+row.test, deploy:+row.deploy, monitor:+row.monitor} : a);
     lastData = "";
-    e.target.reset();
-    toast(`Intento guardado: ${total(body)}/40.`, "ok");
+    form.reset();
+    toast(`Intento guardado: ${total(body)}/${T().exam.total}.`, "ok");
   }catch(err){
     attempts = attempts.filter(a=>a!==tmp);
     fail(err, err.status === 400 ? "Puntajes inválidos (0 a 10)." : "No se pudo guardar el intento.");
   }finally{
     pending--;
-    $("s-save").disabled = false;
+    if($("s-save")) $("s-save").disabled = false;
     renderScores(); update();
   }
 });
 
-$("scores").addEventListener("click", async e=>{
+document.addEventListener("click", async e=>{
   const btn = e.target.closest("[data-del]");
   if(!btn) return;
   const id = btn.dataset.del;
@@ -881,39 +1171,78 @@ $("logout").addEventListener("click", async ()=>{
   location.href = "/login";
 });
 
-/* ---------- Navegación ---------- */
-const VIEWS = ["hoy","plan","cursos","examenes"];
-function placeInd(anim){
-  const a = document.querySelector('.nav a[aria-current="page"]'), ind = $("seg-ind");
-  if(!a) return;
+/* ---------- Navegación por hash ---------- */
+const VIEWS = ["inicio","resumen","plan","cursos","examenes","proyectos","vacantes"];
+const SUBS = ["resumen","plan","cursos","examenes"];
+const OLD = {hoy:"resumen", plan:"plan", cursos:"cursos", examenes:"examenes"};   // hashes del tablero anterior
+
+function parse(){
+  let h = location.hash.slice(1);
+  if(OLD[h] && TRACKS.some(t=>t.id==="lcae")){ h = "ruta/lcae/"+OLD[h]; history.replaceState(null, "", "#"+h); }
+  if(h === "ruta" || h === "rutas") return {view:lastSub, track:trackId};
+  const m = h.match(/^ruta\/([a-z0-9-]+)(?:\/([a-z]+))?$/);
+  if(m){
+    const t = TRACKS.find(x=>x.id===m[1]);
+    if(t){ let s = SUBS.includes(m[2]) ? m[2] : "resumen"; if(s === "examenes" && !t.exam) s = "resumen"; return {view:s, track:t.id}; }
+  }
+  if(h === "proyectos" || h === "vacantes") return {view:h};
+  return {view:"inicio"};
+}
+
+function placeInd(nav, anim){
+  const ind = nav.querySelector(".seg-ind"), a = nav.querySelector('a[aria-current="page"]');
+  if(!ind) return;
+  if(!a || !a.offsetWidth){ ind.style.width = "0px"; return; }
   ind.classList.toggle("no-anim", !anim);
   ind.style.width = a.offsetWidth+"px";
   ind.style.transform = `translateX(${a.offsetLeft}px)`;
 }
+const placeInds = anim => { placeInd($("nav"), anim); if(!$("subbar").hidden) placeInd($("subnav"), anim); };
+
 function route(){
-  let v = location.hash.slice(1);
-  if(!VIEWS.includes(v)) v = "hoy";
-  if(v === view) return;
+  const r = parse();
   const first = view === null;
-  view = v;
+  let trackChanged = false;
+  if(r.track && r.track !== builtTrack){
+    trackId = r.track; store.set("aie-track", trackId);
+    buildTrack(); renderRouteCard();
+    trackChanged = true;
+    if(ready){ syncChecks(); update(); }
+  }
+  if(r.view === view && !trackChanged) return;
+  const subWasHidden = $("subbar").hidden;
+  view = r.view;
+  const group = SUBS.includes(view) ? "rutas" : view;
+  if(group === "rutas") lastSub = view;
   VIEWS.forEach(x=>{
     const sec = $("v-"+x);
-    if(x === v){ sec.hidden = false; sec.classList.remove("entering"); void sec.offsetWidth; sec.classList.add("entering"); }
+    if(x === view){ sec.hidden = false; sec.classList.remove("entering"); void sec.offsetWidth; sec.classList.add("entering"); }
     else sec.hidden = true;
   });
-  $$(".nav a").forEach(a=>{ if(a.dataset.v === v) a.setAttribute("aria-current","page"); else a.removeAttribute("aria-current"); });
-  placeInd(!first);
+  $$("#nav a").forEach(a=>{ if(a.dataset.p === group) a.setAttribute("aria-current","page"); else a.removeAttribute("aria-current"); });
+  $$("#subnav a").forEach(a=>{ if(a.dataset.s === view) a.setAttribute("aria-current","page"); else a.removeAttribute("aria-current"); });
+  $("nav").querySelector('[data-p="rutas"]').href = `#ruta/${trackId}/${lastSub}`;
+  $("subbar").hidden = group !== "rutas";
+  placeInd($("nav"), !first);
+  if(group === "rutas") placeInd($("subnav"), !first && !subWasHidden);
+  const cur = $("subnav").querySelector('[aria-current="page"]');
+  if(cur && group === "rutas") cur.scrollIntoView({block:"nearest", inline:"nearest"});
   if(!first) scrollTo({top:0, behavior:"instant"});
-  if(v === "examenes") drawChart(true);
+  if(view === "examenes") drawChart(true);
   paint();
 }
 addEventListener("hashchange", route);
 
-/* ---------- Inicio ---------- */
-build();
+/* ---------- Arranque ---------- */
+buildHome();
+renderRouteCard();
+buildProjects();
+buildJobs();
+buildTrack();
 greeting();
+renderHomeNext();
 route();
-document.fonts && document.fonts.ready.then(()=>placeInd(false));
+document.fonts && document.fonts.ready.then(()=>placeInds(false));
 refresh();
 setInterval(()=>{ if(document.visibilityState === "visible"){ greeting(); refresh(); } }, 60000);
 document.addEventListener("visibilitychange", ()=>{ if(document.visibilityState === "visible") refresh(); });

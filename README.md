@@ -15,9 +15,12 @@
 | [05-proyectos](05-proyectos/README.md) | Proyectos de portafolio (especificaciones y código) |
 | [06-vacante](06-vacante/nexaminds.md) | La vacante, el análisis de gaps y el contexto de Raúl |
 
-## Tablero web
+## App web "AI Engineer"
 
-`public/index.html` + `server/` (Node + Express + Postgres). Contrato de la API: [CONTRACT.md](CONTRACT.md).
+El hub de todo el camino a AI Engineer: rutas de estudio (la primera es LCAE), proyectos y vacantes, con un agente animado de mascota. `public/` + `server/` (Node + Express + Postgres). Estructura y API: [CONTRACT.md](CONTRACT.md).
+
+- **Nueva ruta:** crea `public/data/<id>.js` y regístrala en `public/data/tracks.js` (ids de tareas con prefijo propio).
+- **Nuevo proyecto / vacante:** agrégalo a `public/data/projects.js` o `public/data/jobs.js`.
 
 **Local:** `npm install` y luego `npm start` → http://localhost:3000. Sin `DATABASE_URL` guarda en memoria.
 
